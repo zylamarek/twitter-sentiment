@@ -1,5 +1,5 @@
 """
-The script trains a LSTM neural network model with attention mechanism and convolution inputs on SemEval2016 Task 4A
+The script trains a LSTM neural network model with attention mechanism and convolution inputs on SemEval2017 Task 4A
 data. Batches of sequences of characters (tweets) are input to the network. The model tries to predict the overall
 sentiment (positive, neutral, negative) of each tweet. The network uses a softmax layer with 3 outputs, one for each
 sentiment. The summed crossentropy is used as the training loss function. RMSProp algorithm is used for parameters
