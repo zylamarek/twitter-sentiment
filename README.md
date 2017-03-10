@@ -168,7 +168,7 @@ results and some clearly worsen the outcome.
 
 It's amazing, how a little amount of parameters the attention mechanism uses compared to the great performance boost
 it gives. The effect of this ingenious concept is clearly seen in the table below. Its
-influence can be noticed by comparing performance of LSTM+AT to pure LSTM, but also LSTM+AT to Cn+LSTM.
+influence can be noticed by comparing performance of LSTM+AT to pure LSTM, but also Cnn+LSTM+AT to Cnn+LSTM.
 
 Application of convolution layer is also beneficial, but not to such an extent. It's worth noticing that the convolution
 layer limits the 1-hot (565 orthogonal elements) input to a vector of either 50 or 100 real numbers and by doing that it
