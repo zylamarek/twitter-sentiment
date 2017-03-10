@@ -25,6 +25,7 @@ Parameters:
     EARLY_STOPPING - number of epochs without recall increase after which the training stops
     CONV_SIZES - a list containing sizes of convolution filters
     NUM_CONV_EACH - number of filters for each filter size
+    CONV_NUM_LAYERS - number of stacked convolution layers
     DT_NUM_LAYERS - number of feed forward layers between consecutive LSTM hidden states (deep transition)
     DI_NUM_LAYERS - number of feed forward layers before LSTM input (deep input)
     DO_NUM_LAYERS - number of feed forward layers after LSTM output (deep output)
@@ -80,6 +81,7 @@ parser.add_argument('-INIT_RANGE', type=float, default=0.08)
 parser.add_argument('-EARLY_STOPPING', type=int, default=10)
 parser.add_argument('-CONV_SIZES', nargs='+', type=int, default=[3, 5, 7, 13, 21])
 parser.add_argument('-NUM_CONV_EACH', type=int, default=10)
+parser.add_argument('-CONV_NUM_LAYERS', type=int, default=1)
 parser.add_argument('-DT_NUM_LAYERS', type=int, default=0)
 parser.add_argument('-DI_NUM_LAYERS', type=int, default=0)
 parser.add_argument('-DO_NUM_LAYERS', type=int, default=0)
@@ -123,6 +125,7 @@ folder_name += '_semeval_%dLSTM' % len(args.REC_NUM_UNITS)
 folder_name += '_'.join([str(rnu) for rnu in args.REC_NUM_UNITS])
 folder_name += '_D' + '_'.join([str(dnu) for dnu in args.DENSE_NUM_UNITS])
 folder_name += '_A%d' % args.ATTENTION_NUM_UNITS
+folder_name += '_C%d' % args.CONV_NUM_LAYERS
 folder_name += '_NCE%d' % args.NUM_CONV_EACH
 folder_name += '_DT%d' % args.DT_NUM_LAYERS
 folder_name += '_DI%d' % args.DI_NUM_LAYERS
@@ -169,6 +172,7 @@ logger.info('folder_name        : ' + str(folder_name))
 logger.info('EARLY_STOPPING     : ' + str(args.EARLY_STOPPING))
 logger.info('CONV_SIZES         : ' + str(args.CONV_SIZES))
 logger.info('NUM_CONV_EACH      : ' + str(args.NUM_CONV_EACH))
+logger.info('CONV_NUM_LAYERS    : ' + str(args.CONV_NUM_LAYERS))
 logger.info('DT_NUM_LAYERS      : ' + str(args.DT_NUM_LAYERS))
 logger.info('DI_NUM_LAYERS      : ' + str(args.DI_NUM_LAYERS))
 logger.info('DO_NUM_LAYERS      : ' + str(args.DO_NUM_LAYERS))
@@ -223,22 +227,24 @@ t0 = time.time()
 l_inp = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len, data.charset_size), input_var=sym_x)
 l_mask = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len), input_var=sym_x_mask)
 
-# Dropout
-if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
-    l_drp = word_dropout.WordDropoutLayer(incoming=l_inp, word_input=l_inp, space=data.charset_map[' '],
-                                          p=args.DROPOUT_FRACTION)
-else:
-    l_drp = lasagne.layers.DropoutLayer(incoming=l_inp, p=args.DROPOUT_FRACTION)
+# Convolution layers
+l_conv = l_inp
+for _ in range(args.CONV_NUM_LAYERS):
+    # Dropout
+    if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
+        l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
+                                               p=args.DROPOUT_FRACTION)
+    else:
+        l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=args.DROPOUT_FRACTION)
 
-# Convolution
-l_conv = l_drp
-if args.CONV_SIZES is not None:
-    l_sh = lasagne.layers.DimshuffleLayer(incoming=l_drp, pattern=(0, 2, 1))
-    l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
-                                          filter_size=conv_size, stride=1, pad='same')
-               for conv_size in args.CONV_SIZES]
-    l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
-    l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
+    # Convolution
+    if args.CONV_SIZES is not None:
+        l_sh = lasagne.layers.DimshuffleLayer(incoming=l_conv, pattern=(0, 2, 1))
+        l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
+                                              filter_size=conv_size, stride=1, pad='same')
+                   for conv_size in args.CONV_SIZES]
+        l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
+        l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
 
 l_lstm = l_conv
 l_conv_num = int(np.prod(l_conv.output_shape[2:]))
