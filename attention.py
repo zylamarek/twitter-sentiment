@@ -57,7 +57,7 @@ class AttentionLayer(MergeLayer):
             mask = inputs[self.mask_incoming_index]
 
         # reshape input
-        input = input.reshape((input.shape[0]*input.shape[1], input.shape[2]))
+        input = input.reshape((input.shape[0] * input.shape[1], input.shape[2]))
 
         # apply mask
         if mask is not None:
@@ -74,7 +74,7 @@ class AttentionLayer(MergeLayer):
         # apply softmax - acquiring attention weights for each letter in each tweet
         activation = activation.reshape((original_shape[0], original_shape[1]))
         attention_w = nonlinearities.softmax(activation)
-        attention_w = attention_w.reshape((original_shape[0]*original_shape[1], 1))
+        attention_w = attention_w.reshape((original_shape[0] * original_shape[1], 1))
 
         # get weighted sum of each hidden state according to attention weights
         context = input * attention_w
