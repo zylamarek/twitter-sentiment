@@ -56,13 +56,13 @@ class WordDropoutLayer(MergeLayer):
 
             batch_size = input.shape[0]
 
-            mask_prev_init = T.zeros((batch_size, ), dtype=input.dtype)
-            word_prev_init = T.zeros((batch_size, ), dtype=input.dtype)
+            mask_prev_init = T.zeros((batch_size,), dtype=input.dtype)
+            word_prev_init = T.zeros((batch_size,), dtype=input.dtype)
 
             # Define step function that samples dropout only for new words
             def step(word_n, mask_prev, word_prev, *args):
                 mask = T.switch(T.eq(word_n, 0),
-                                T.ones((batch_size, )),
+                                T.ones((batch_size,)),
                                 T.switch(T.eq(word_prev, 1),
                                          mask_prev,
                                          self._srng.binomial((batch_size,), p=retain_prob, dtype=input.dtype)))
