@@ -136,7 +136,7 @@ class EvaluationHelper:
             rho_p = PP / (PP + UP + NP + self.tol)
             F_p = 2. * pi_p * rho_p / (rho_p + pi_p)
             pi_n = NN / (NN + NU + NP + self.tol)
-            rho_n = NN/(NN + UN + PN + self.tol)
+            rho_n = NN / (NN + UN + PN + self.tol)
             F_n = 2. * pi_n * rho_n / (rho_n + pi_n)
             F_pn = (F_n + F_p) / 2.
             rho_u = UU / (NU + UU + PU + self.tol)
