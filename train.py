@@ -305,6 +305,7 @@ def cross_ent(net_output, target, mask):
     cost_ce = mask * cost_ce
     return T.sum(cost_ce)
 
+
 # Define Theano variables for training and evaluation
 train_out = lasagne.layers.get_output(l_out, deterministic=False)
 cost_train = cross_ent(train_out, sym_y, sym_x_mask)
