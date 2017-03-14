@@ -285,17 +285,7 @@ class DataWrapper:
         self.x_mask = np.zeros((data_size, self.max_len), dtype=np.uint32)
         self.y = np.zeros(data_size, dtype=np.uint32)
 
-    def __shuffle_data(self):  #, chunk_id=None):
-        # if chunk_id is None:
-        #     chunk_id = self.current_chunk
-        # if chunk_id == self.n_chunks[self.current_data] - 1 and self.y.shape[0] == self.chunk_size:
-        #     shuffle_up_to = self.n_batches[self.current_data] * self.batch_size % self.chunk_size
-        #     current_slice = range(shuffle_up_to)
-        #     np.random.shuffle(current_slice)
-        #     current_slice += range(shuffle_up_to, self.chunk_size)
-        # else:
-        #     current_slice = range(self.y.shape[0])
-        #     np.random.shuffle(current_slice)
+    def __shuffle_data(self):
         current_slice = range(self.y.shape[0])
         np.random.shuffle(current_slice)
         self.x = self.x[current_slice]
