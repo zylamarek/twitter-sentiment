@@ -4,6 +4,10 @@ Manages loading data and prepping batches. Dynamically stores and loads chunks o
 larger than the available RAM. Uses numpy for saving and loading data, as it is much faster than pickle and allows
 compression.
 
+It can be instantiated with 4 different shuffle_* flags, each responsible for random behavior. If a deterministic
+order of data is required in an already existing object, it is enough to temporarily set shuffle_batch_on_return and
+shuffle_in_chunk_on_chunk_reload flags to False before iterating.
+
 Parameters:
     data_path - str or list - path to file(s) containing data
     train_ids - int or list - ids specifying datasets used for training, may be one or multiple files
