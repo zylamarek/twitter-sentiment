@@ -182,8 +182,8 @@ and dense layer pushes the performance even higher, but the gains become lower a
 (except for one case) bring higher or at least equal performance within each setting. It is clear that the network
 benefits from them as well.
 
-Adding an extra LSTM layer (3 stacked layers instead of 2) delivers the best result across all settings, but not all
-particular settings benefit from it.
+Adding an extra LSTM layer (3 stacked layers instead of 2) delivers the best result so far across all settings,
+but not all particular settings benefit from it. Nevertheless, it seems to be the best performing architecture so far.
 
 Introducing block, deep input and deep output layers worsens the performance, except for the 1M 5e-4 C20 case, which
 is slightly better than its previous best. Still, none of these architectures beat the highest score across all
