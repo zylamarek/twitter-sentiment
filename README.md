@@ -189,6 +189,15 @@ Introducing block, deep input and deep output layers worsens the performance, ex
 is slightly better than its previous best. Still, none of these architectures beat the highest score across all
 the settings.
 
+Stacking 3 layers in deep transition or deepening the dense network (2 or 3 layers) is clearly deteriorating the
+performance. Only 2 single results are insignificantly higher than the previous ones in their respective settings.
+
+The results of DT2+D1 architecture are a little ambiguous. Most of them are worse, two reach the previous best and one
+(C20 2M 5e-4) sets the record for the best result so far across all settings (0.3% increase). The average result achieved
+by this architecture is 0.5% lower than DT1+D1. These two architectures deliver comparable performance and there are many
+arguments for and against both of them. In my arbitrary decision I chose to go on with the DT1+D1.
+Mainly, because it is simpler.
+
 <table>
 
 <tr>
@@ -283,6 +292,46 @@ the settings.
 <td>:tomato:0.572/0.541/33<br>:tomato:0.557/0.527/22</td>
 <td>:tomato:0.566/0.534/31<br>:tomato:0.566/0.532/30</td>
 <td>:tomato:0.553/0.519/15<br>:tomato:0.556/0.520/24</td>
+</tr>
+
+<tr align=center>
+<td align=right>C10+3LSTM+DT2+AT+D1<br>C20+3LSTM+DT2+AT+D1</td>
+<td>:tomato:0.564/0.539/42<br>:lemon:0.575/0.545/34</td>
+<td>:tomato:0.568/0.543/16<br>:lemon:0.571/0.543/20</td>
+<td>:tomato:0.557/0.539/17<br>:green_apple:0.584/0.562/26</td>
+<td>:tomato:0.562/0.535/11<br>:tomato:0.572/0.553/14</td>
+</tr>
+
+<tr align=center>
+<td align=right>C10+3LSTM+DT3+AT+D1<br>C20+3LSTM+DT3+AT+D1</td>
+<td>:tomato:0.558/0.537/22<br>:tomato:0.517/0.490/26</td>
+<td>:tomato:0.554/0.529/19<br>:tomato:0.568/0.545/20</td>
+<td>:tomato:0.564/0.550/31<br>:tomato:0.574/0.554/23</td>
+<td>:tomato:0.557/0.536/17<br>:tomato:0.578/0.555/15</td>
+</tr>
+
+<tr align=center>
+<td align=right>C10+3LSTM+DT2+AT+D2<br>C20+3LSTM+DT2+AT+D2</td>
+<td>:tomato:0.568/0.542/41<br>:tomato:0.571/0.549/22</td>
+<td>:tomato:0.560/0.537/30<br>:green_apple:0.575/0.547/18</td>
+<td>:tomato:0.555/0.535/22<br>:tomato:0.582/0.554/22</td>
+<td>:tomato:0.568/0.549/18<br>:tomato:0.571/0.553/25</td>
+</tr>
+
+<tr align=center>
+<td align=right>C10+3LSTM+DT3+AT+D3<br>C20+3LSTM+DT3+AT+D3</td>
+<td>:tomato:0.563/0.543/39<br>:green_apple:0.576/0.550/31</td>
+<td>:tomato:0.567/0.541/29<br>:tomato:0.561/0.529/25</td>
+<td>:tomato:0.570/0.545/28<br>:tomato:0.576/0.553/20</td>
+<td>:tomato:0.570/0.541/31<br>:tomato:0.579/0.552/27</td>
+</tr>
+
+<tr align=center>
+<td align=right>BEST C10<br>BEST C20</td>
+<td>0.569/0.545/29<br>0.576/0.550/31</td>
+<td>0.574/0.548/34<br>0.575/0.547/18</td>
+<td>0.574/0.547/28<br>0.584/0.562/26</td>
+<td>0.574/0.561/23<br>0.582/0.555/17</td>
 </tr>
 
 </table>
