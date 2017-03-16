@@ -20,7 +20,7 @@ __all__ = [
 
 class AttentionLayer(MergeLayer):
     def __init__(self, incoming, num_units, mask_input=None, W=init.GlorotUniform(),
-                 v=init.GlorotUniform(), b=init.Constant(0.), nonlinearity=nonlinearities.tanh,
+                 v=init.GlorotUniform(), b=init.Constant(0.), num_att_layers=1, nonlinearity=nonlinearities.tanh,
                  **kwargs):
 
         incomings = [incoming]
@@ -33,16 +33,14 @@ class AttentionLayer(MergeLayer):
         self.nonlinearity = (nonlinearities.identity if nonlinearity is None else nonlinearity)
 
         self.num_units = num_units
+        self.num_att_layers = num_att_layers
 
         input_shape = self.input_shapes[0]
         num_inputs = int(np.prod(input_shape[2:]))
 
-        self.W = self.add_param(W, (num_inputs, num_units), name='W')
+        self.W = [self.add_param(W, (num_inputs, num_units), name='W') for _ in range(self.num_att_layers)]
+        self.b = [self.add_param(b, (num_units,), name='b', regularizable=False) for _ in range(self.num_att_layers)]
         self.v = self.add_param(v, (num_units, 1), name='v')
-        if b is None:
-            self.b = None
-        else:
-            self.b = self.add_param(b, (num_units,), name='b', regularizable=False)
 
     def get_output_shape_for(self, input_shapes):
         input_shape = input_shapes[0]
@@ -64,11 +62,11 @@ class AttentionLayer(MergeLayer):
             mask = mask.reshape((mask.shape[0] * mask.shape[1], 1))
             input *= mask
 
-        # compute g(W*x+b)*v
-        activation = T.dot(input, self.W)
-        if self.b is not None:
-            activation = activation + self.b.dimshuffle('x', 0)
-        activation = self.nonlinearity(activation)
+        # compute g(W* ... g(W* g(W*x+b) +b) ... +b) * v
+        activation = input
+        for W, b in zip(self.W, self.b):
+            activation = T.dot(activation, W) + b.dimshuffle('x', 0)
+            activation = self.nonlinearity(activation)
         activation = T.dot(activation, self.v)
 
         # apply softmax - acquiring attention weights for each letter in each tweet

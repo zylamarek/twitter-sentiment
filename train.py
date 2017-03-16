@@ -13,7 +13,8 @@ Parameters:
     TOL - a small number added to some denominators to prevent division by zero errors, bringing numerical stability
     REC_NUM_UNITS - a list of numbers of units in each LSTM layer (input side first)
     DENSE_NUM_UNITS - a list of numbers of units in each dense layer (input side first)
-    ATTENTION_NUM_UNITS - number of units in the attention layer
+    ATTENTION_NUM_UNITS - number of units in each attention layer
+    ATTENTION_NUM_LAYERS - number of layers in the attention mechanism
     DROPOUT_FRACTION - probability of setting a connection to zero
     LEARNING_RATE - RMSProp parameter
     DECAY - LEARNING_RATE is multiplied by this factor in each epoch after NO_DECAY_EPOCHS
@@ -70,6 +71,7 @@ parser.add_argument('-TOL', type=float, default=1e-7)
 parser.add_argument('-REC_NUM_UNITS', nargs='+', type=int, default=[219, 219])
 parser.add_argument('-DENSE_NUM_UNITS', nargs='+', type=int, default=[219])
 parser.add_argument('-ATTENTION_NUM_UNITS', type=int, default=219)
+parser.add_argument('-ATTENTION_NUM_LAYERS', type=int, default=1)
 parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2)
 parser.add_argument('-LEARNING_RATE', type=float, default=1e-3)
 parser.add_argument('-DECAY', type=float, default=0.99)
@@ -124,7 +126,7 @@ folder_name = time.strftime('%Y.%m.%d-%H.%M.%S')
 folder_name += '_semeval_%dLSTM' % len(args.REC_NUM_UNITS)
 folder_name += '_'.join([str(rnu) for rnu in args.REC_NUM_UNITS])
 folder_name += '_D' + '_'.join([str(dnu) for dnu in args.DENSE_NUM_UNITS])
-folder_name += '_A%d' % args.ATTENTION_NUM_UNITS
+folder_name += '_A%dx%d' % (args.ATTENTION_NUM_UNITS, args.ATTENTION_NUM_LAYERS)
 folder_name += '_C%d' % args.CONV_NUM_LAYERS
 folder_name += '_NCE%d' % args.NUM_CONV_EACH
 folder_name += '_DT%d' % args.DT_NUM_LAYERS
@@ -254,14 +256,14 @@ for i_layer, rec_num_units in enumerate(args.REC_NUM_UNITS):
         l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=args.REC_NUM_UNITS[i_layer], num_leading_axes=2)
 
 # Attention
-if args.ATTENTION_NUM_UNITS > 0:
+if args.ATTENTION_NUM_UNITS > 0 and args.ATTENTION_NUM_LAYERS > 0:
     if args.DROPOUT_TYPE == 'word':
         l_lstm = word_dropout.WordDropoutLayer(incoming=l_lstm, word_input=l_inp, space=data.charset_map[' '],
                                                p=args.DROPOUT_FRACTION)
     else:
         l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=args.DROPOUT_FRACTION)
     l_lstm = attention.AttentionLayer(incoming=l_lstm, num_units=args.ATTENTION_NUM_UNITS, mask_input=l_mask,
-                                      W=INI, v=INI, b=INI)
+                                      W=INI, v=INI, b=INI, num_att_layers=args.ATTENTION_NUM_LAYERS)
 
 # Dense layer
 for dense_num_units in args.DENSE_NUM_UNITS:
