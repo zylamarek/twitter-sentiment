@@ -154,10 +154,11 @@ logger.addHandler(fh)
 
 # Log parameters
 logger.info('Settings')
-logger.info('Theano optimizer\t: '.expandtabs(20) + str(theano.config.optimizer))
-logger.info('folder_name\t: '.expandtabs(20) + str(folder_name))
+col_wid = max([len(name) for name, _ in args._get_kwargs()]) + 1
+logger.info('Theano optimizer\t: '.expandtabs(col_wid) + str(theano.config.optimizer))
+logger.info('folder_name\t: '.expandtabs(col_wid) + str(folder_name))
 for name, value in args._get_kwargs():
-    logger.info((name + '\t: ' + str(value)).expandtabs(20))
+    logger.info((name + '\t: ' + str(value)).expandtabs(col_wid))
 
 # Get floatX type
 floatX_dtype = np.dtype(theano.config.floatX).type
