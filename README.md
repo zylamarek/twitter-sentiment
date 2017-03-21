@@ -125,16 +125,17 @@ INPUT - DRP - CONVOLUTION - N\*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DEN
 
 I started with a basic 2 stacked layers LSTM network. As I learned during my MSc project, it's an OK starting point.
 Then I began adding more and more fancy solutions to reach a full model as presented in the diagram above.
-I ran plenty experiments in order to see how each augmentation improves (or worsens) the model.
+I ran plenty experiments in order to see how each augmentation improves (or worsens) the model. For the nomenclature used
+here please consult the legend below the table.
 
 All models were fixed to have approximately 1 or 2 millions parameters. Units in each layer were distributed equally, except
 for the convolution layer, which had a fixed number of params. The convolution layer had either 10 filters of each size
 (50 filters in total) or 20 filters of each size (100 filters in total). The filter sizes were always 3, 5, 7, 13 and 21
-characters. With 565 unique characters, a C10+3LSTM+DT1+AT1+D1 1M have the parameters distributed as follows:<br><br>
+characters. With 565 unique characters, a C10+3LSTM+DT1+A1+D1 1M have the parameters distributed as follows:<br><br>
 C10: 565\*3\*10+10 + 565\*5\*10+10 + 565\*7\*10+10 + 565\*13\*10+10 + 565\*21\*10+10 = 276900 (28%)<br>
 1LSTM: 4\*(165\*50 + 165\*165 + 165) + 3\*165 + 2\*165 + 165\*165 + 165 = 170775 (17%)<br>
 2&3LSTM: 2\*(4\*(165\*165 + 165\*165 + 165) + 3\*165 + 2\*165 + 165\*165 + 165) = 2\*246675 = 493350 (2x25%)<br>
-AT1: 165\*165 + 165 + 165 = 27555 (2.8%)<br>
+A1: 165\*165 + 165 + 165 = 27555 (2.8%)<br>
 D1: 165\*165 + 165 = 27390 (2.7%)<br>
 SOFTMAX: 165\*3 + 3 = 498 (0.5%)<br>
 total: 996468
@@ -168,7 +169,7 @@ results and some clearly worsen the outcome.
 
 It's amazing, how a little amount of parameters the attention mechanism uses compared to the great performance boost
 it gives. The effect of this ingenious concept is clearly seen in the table below. Its
-influence can be noticed by comparing performance of 2LSTM+AT1 to pure 2LSTM, but also Cnn+2LSTM+AT1 to Cnn+2LSTM.
+influence can be noticed by comparing performance of 2LSTM+A1 to pure 2LSTM, but also Cnn+2LSTM+A1 to Cnn+2LSTM.
 
 Application of convolution layer is also beneficial, but not to such an extent. It's worth noticing that the convolution
 layer limits the 1-hot (565 orthogonal elements) input to a vector of either 50 or 100 real numbers and by doing that it
@@ -198,7 +199,7 @@ by this architecture is 0.5% lower than DT1+D1. These two architectures deliver 
 arguments for and against both of them. In my arbitrary decision I chose to go on with the DT1+D1.
 Mainly, because it is simpler.
 
-Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) does not increase the performance.
+Introducing extra stacked dense layers in the attention mechanism (A2 and A3) does not increase the performance.
 
 <table>
 
@@ -233,7 +234,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>2LSTM+AT1</td>
+<td align=right>2LSTM+A1</td>
 <td>:green_apple:0.510/0.488/56</td>
 <td>:green_apple:0.541/0.511/56</td>
 <td>:green_apple:0.485/0.457/24</td>
@@ -241,7 +242,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+2LSTM+AT1<br>C20+2LSTM+AT1</td>
+<td align=right>C10+2LSTM+A1<br>C20+2LSTM+A1</td>
 <td>:green_apple:0.557/0.537/23<br>:green_apple:0.562/0.544/24</td>
 <td>:green_apple:0.561/0.525/19<br>:green_apple:0.569/0.546/19</td>
 <td>:green_apple:0.563/0.538/23<br>:green_apple:0.569/0.537/26</td>
@@ -249,7 +250,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+2LSTM+AT1+D1<br>C20+2LSTM+AT1+D1</td>
+<td align=right>C10+2LSTM+A1+D1<br>C20+2LSTM+A1+D1</td>
 <td>:tomato:0.554/0.543/15<br>:green_apple:0.563/0.545/22</td>
 <td>:green_apple:0.563/0.544/25<br>:green_apple:0.571/0.552/14</td>
 <td>:green_apple:0.568/0.544/28<br>:green_apple:0.572/0.546/25</td>
@@ -257,7 +258,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+2LSTM+AT1+D1+BLK<br>C20+2LSTM+AT1+D1+BLK</td>
+<td align=right>C10+2LSTM+A1+D1+BLK<br>C20+2LSTM+A1+D1+BLK</td>
 <td>:tomato:0.541/0.519/30<br>:tomato:0.519/0.510/26</td>
 <td>:tomato:0.562/0.529/22<br>:tomato:0.547/0.517/18</td>
 <td>:tomato:0.518/0.503/18<br>:tomato:0.530/0.511/17</td>
@@ -265,7 +266,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+2LSTM+DT1+AT1+D1<br>C20+2LSTM+DT1+AT1+D1</td>
+<td align=right>C10+2LSTM+DT1+A1+D1<br>C20+2LSTM+DT1+A1+D1</td>
 <td>:green_apple:0.566/0.548/22<br>:green_apple:0.570/0.556/19</td>
 <td>:green_apple:0.571/0.557/22<br>:lemon:0.571/0.557/13</td>
 <td>:lemon:0.568/0.546/23<br>:green_apple:0.573/0.551/21</td>
@@ -273,7 +274,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT1+AT1+D1<br>C20+3LSTM+DT1+AT1+D1</td>
+<td align=right>C10+3LSTM+DT1+A1+D1<br>C20+3LSTM+DT1+A1+D1</td>
 <td>:green_apple:0.569/0.545/29<br>:tomato:0.566/0.529/35</td>
 <td>:green_apple:0.574/0.548/34<br>:tomato:0.566/0.542/19</td>
 <td>:green_apple:0.574/0.547/28<br>:green_apple:0.581/0.557/28</td>
@@ -281,7 +282,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+DI1+3LSTM+DT1+AT1+D1<br>C20+DI1+3LSTM+DT1+AT1+D1</td>
+<td align=right>C10+DI1+3LSTM+DT1+A1+D1<br>C20+DI1+3LSTM+DT1+A1+D1</td>
 <td>:tomato:0.559/0.528/36<br>:tomato:0.543/0.509/21</td>
 <td>:tomato:0.543/0.513/24<br>:tomato:0.465/0.452/07</td>
 <td>:tomato:0.553/0.528/36<br>:tomato:0.549/0.519/17</td>
@@ -289,7 +290,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT1+DO1+AT1+D1<br>C20+3LSTM+DT1+DO1+AT1+D1</td>
+<td align=right>C10+3LSTM+DT1+DO1+A1+D1<br>C20+3LSTM+DT1+DO1+A1+D1</td>
 <td>:tomato:0.560/0.532/41<br>:green_apple:0.575/0.543/26</td>
 <td>:tomato:0.572/0.541/33<br>:tomato:0.557/0.527/22</td>
 <td>:tomato:0.566/0.534/31<br>:tomato:0.566/0.532/30</td>
@@ -297,7 +298,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT2+AT1+D1<br>C20+3LSTM+DT2+AT1+D1</td>
+<td align=right>C10+3LSTM+DT2+A1+D1<br>C20+3LSTM+DT2+A1+D1</td>
 <td>:tomato:0.564/0.539/42<br>:lemon:0.575/0.545/34</td>
 <td>:tomato:0.568/0.543/16<br>:lemon:0.571/0.543/20</td>
 <td>:tomato:0.557/0.539/17<br>:green_apple:0.584/0.562/26</td>
@@ -305,7 +306,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT3+AT1+D1<br>C20+3LSTM+DT3+AT1+D1</td>
+<td align=right>C10+3LSTM+DT3+A1+D1<br>C20+3LSTM+DT3+A1+D1</td>
 <td>:tomato:0.558/0.537/22<br>:tomato:0.517/0.490/26</td>
 <td>:tomato:0.554/0.529/19<br>:tomato:0.568/0.545/20</td>
 <td>:tomato:0.564/0.550/31<br>:tomato:0.574/0.554/23</td>
@@ -313,7 +314,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT2+AT1+D2<br>C20+3LSTM+DT2+AT1+D2</td>
+<td align=right>C10+3LSTM+DT2+A1+D2<br>C20+3LSTM+DT2+A1+D2</td>
 <td>:tomato:0.568/0.542/41<br>:tomato:0.571/0.549/22</td>
 <td>:tomato:0.560/0.537/30<br>:green_apple:0.575/0.547/18</td>
 <td>:tomato:0.555/0.535/22<br>:tomato:0.582/0.554/22</td>
@@ -321,7 +322,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT3+AT1+D3<br>C20+3LSTM+DT3+AT1+D3</td>
+<td align=right>C10+3LSTM+DT3+A1+D3<br>C20+3LSTM+DT3+A1+D3</td>
 <td>:tomato:0.563/0.543/39<br>:green_apple:0.576/0.550/31</td>
 <td>:tomato:0.567/0.541/29<br>:tomato:0.561/0.529/25</td>
 <td>:tomato:0.570/0.545/28<br>:tomato:0.576/0.553/20</td>
@@ -329,7 +330,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT1+AT2+D1<br>C20+3LSTM+DT1+AT2+D1</td>
+<td align=right>C10+3LSTM+DT1+A2+D1<br>C20+3LSTM+DT1+A2+D1</td>
 <td>:tomato:0.561/0.539/22<br>:tomato:0.562/0.543/21</td>
 <td>:tomato:0.565/0.545/15<br>:tomato:0.571/0.544/13</td>
 <td>:tomato:0.566/0.540/28<br>:tomato:0.564/0.535/35</td>
@@ -337,7 +338,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 </tr>
 
 <tr align=center>
-<td align=right>C10+3LSTM+DT1+AT3+D1<br>C20+3LSTM+DT1+AT3+D1</td>
+<td align=right>C10+3LSTM+DT1+A3+D1<br>C20+3LSTM+DT1+A3+D1</td>
 <td>:tomato:0.551/0.534/23<br>:tomato:0.546/0.528/21</td>
 <td>:tomato:0.557/0.527/18<br>:tomato:0.565/0.541/20</td>
 <td>:tomato:0.551/0.527/26<br>:tomato:0.556/0.524/26</td>
@@ -357,7 +358,7 @@ Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) 
 LEGEND:<br>
 nLSTM - n stacked layers LSTM<br>
 Cnn - convolution with nn filters of each size<br>
-ATn - attention mechanism with n stacked dense layers<br>
+An - attention mechanism with n stacked dense layers<br>
 Dn - n layers dense network after the attention layer<br>
 BLK - block layer<br>
 DTn - deep transition - n layers dense network<br>
