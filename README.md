@@ -198,6 +198,8 @@ by this architecture is 0.5% lower than DT1+D1. These two architectures deliver 
 arguments for and against both of them. In my arbitrary decision I chose to go on with the DT1+D1.
 Mainly, because it is simpler.
 
+Introducing extra stacked dense layers in the attention mechanism (AT2 and AT3) does not increase the performance.
+
 <table>
 
 <tr>
@@ -324,6 +326,22 @@ Mainly, because it is simpler.
 <td>:tomato:0.567/0.541/29<br>:tomato:0.561/0.529/25</td>
 <td>:tomato:0.570/0.545/28<br>:tomato:0.576/0.553/20</td>
 <td>:tomato:0.570/0.541/31<br>:tomato:0.579/0.552/27</td>
+</tr>
+
+<tr align=center>
+<td align=right>C10+3LSTM+DT1+AT2+D1<br>C20+3LSTM+DT1+AT2+D1</td>
+<td>:tomato:0.561/0.539/22<br>:tomato:0.562/0.543/21</td>
+<td>:tomato:0.565/0.545/15<br>:tomato:0.571/0.544/13</td>
+<td>:tomato:0.566/0.540/28<br>:tomato:0.564/0.535/35</td>
+<td>:tomato:0.554/0.524/22<br>:tomato:0.566/0.541/21</td>
+</tr>
+
+<tr align=center>
+<td align=right>C10+3LSTM+DT1+AT3+D1<br>C20+3LSTM+DT1+AT3+D1</td>
+<td>:tomato:0.551/0.534/23<br>:tomato:0.546/0.528/21</td>
+<td>:tomato:0.557/0.527/18<br>:tomato:0.565/0.541/20</td>
+<td>:tomato:0.551/0.527/26<br>:tomato:0.556/0.524/26</td>
+<td>:tomato:0.559/0.526/23<br>:tomato:0.558/0.516/34</td>
 </tr>
 
 <tr align=center>
