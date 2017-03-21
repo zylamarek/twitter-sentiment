@@ -208,9 +208,9 @@ for _ in range(args.CONV_NUM_LAYERS):
     l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
     l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
 
+# LSTM layers
 l_lstm = l_conv
 l_conv_num = int(np.prod(l_conv.output_shape[2:]))
-# LSTM layers
 for i_layer, rec_num_units in enumerate(args.REC_NUM_UNITS):
     only_return_final = args.ATTENTION_NUM_UNITS == 0 and i_layer == len(args.REC_NUM_UNITS) - 1
 
@@ -242,21 +242,24 @@ for i_layer, rec_num_units in enumerate(args.REC_NUM_UNITS):
         l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=args.REC_NUM_UNITS[i_layer], num_leading_axes=2)
 
 # Attention
+l_att = l_lstm
 if args.ATTENTION_NUM_UNITS > 0 and args.ATTENTION_NUM_LAYERS > 0:
     if args.DROPOUT_TYPE == 'word':
-        l_lstm = word_dropout.WordDropoutLayer(incoming=l_lstm, word_input=l_inp, space=data.charset_map[' '],
+        l_att = word_dropout.WordDropoutLayer(incoming=l_att, word_input=l_inp, space=data.charset_map[' '],
                                                p=args.DROPOUT_FRACTION)
     else:
-        l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=args.DROPOUT_FRACTION)
-    l_lstm = attention.AttentionLayer(incoming=l_lstm, num_units=args.ATTENTION_NUM_UNITS, mask_input=l_mask,
+        l_att = lasagne.layers.DropoutLayer(incoming=l_att, p=args.DROPOUT_FRACTION)
+    l_att = attention.AttentionLayer(incoming=l_att, num_units=args.ATTENTION_NUM_UNITS, mask_input=l_mask,
                                       W=INI, v=INI, b=INI, num_att_layers=args.ATTENTION_NUM_LAYERS)
 
 # Dense layer
+l_dense = l_att
 for dense_num_units in args.DENSE_NUM_UNITS:
-    l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=dense_num_units)
+    l_dense = lasagne.layers.DenseLayer(incoming=l_dense, num_units=dense_num_units)
 
 # Softmax output
-l_out = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=data.n_labels, nonlinearity=lasagne.nonlinearities.softmax)
+l_out = lasagne.layers.DenseLayer(incoming=l_dense, num_units=data.n_labels,
+                                  nonlinearity=lasagne.nonlinearities.softmax)
 
 
 # Define loss function
