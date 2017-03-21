@@ -10,36 +10,36 @@ INPUT - DRP - CONVOLUTION - N*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DENS
 
 Parameters:
     BATCH_SIZE - number of tweets in one training batch
-    TOL - a small number added to some denominators to prevent division by zero errors, bringing numerical stability
-    REC_NUM_UNITS - a list of numbers of units in each LSTM layer (input side first)
-    DENSE_NUM_UNITS - a list of numbers of units in each dense layer (input side first)
-    ATTENTION_NUM_UNITS - number of units in each attention layer
-    ATTENTION_NUM_LAYERS - number of layers in the attention mechanism
-    DROPOUT_FRACTION - probability of setting a connection to zero
-    LEARNING_RATE - RMSProp parameter
-    DECAY - LEARNING_RATE is multiplied by this factor in each epoch after NO_DECAY_EPOCHS
-    NO_DECAY_EPOCHS - as above
-    MAX_GRAD - gradient is limited to this value in LSTM layers
-    NUM_EPOCHS - max number of training epochs
-    SEED - random number generator seed (use to reproduce random results)
-    INIT_RANGE - range of initial values of parameters
-    EARLY_STOPPING - number of epochs without recall increase after which the training stops
     CONV_SIZES - a list containing sizes of convolution filters
-    NUM_CONV_EACH - number of filters for each filter size
-    CONV_NUM_LAYERS - number of stacked convolution layers
-    DT_NUM_LAYERS - number of feed forward layers between consecutive LSTM hidden states (deep transition)
-    DI_NUM_LAYERS - number of feed forward layers before LSTM input (deep input)
-    DO_NUM_LAYERS - number of feed forward layers after LSTM output (deep output)
-    PRINT_PROGRESS - print training, evaluation and data loading progress (a dot every 10% for each dataset)
-    DATA_PATH - path to the directory containing the data (each file in this directory will get an id)
     CREATE_DATA_CHUNKS - reload all the data (first run with True and then set to False to speed up data loading)
-    PARAMS_TO_LOAD - path to a file with parameters to load (use if you want to continue an experiment)
+    DATA_PATH - path to the directory containing the data (each file in this directory will get an id)
+    DECAY - LEARNING_RATE is multiplied by this factor in each epoch after NO_DECAY_EPOCHS
+    DROPOUT_FRACTION - probability of setting a connection to zero
     DROPOUT_TYPE - {char, word, 1st_word_only} - which dropout to use; 1st_word_only uses word dropout right after input
         layer and char in the rest
+    EARLY_STOPPING - number of epochs without recall increase after which the training stops
+    EVAL_IDS - extra datasets to evaluate
+    INIT_RANGE - range of initial values of parameters
+    LEARNING_RATE - RMSProp parameter
+    MAX_GRAD - gradient is limited to this value in LSTM layers
+    NO_DECAY_EPOCHS - look at DECAY
+    NUM_CONV_EACH - number of filters for each filter size
+    NUM_EPOCHS - max number of training epochs
+    NUM_LAYERS_ATTENTION - number of stacked dense layers in the attention mechanism
+    NUM_LAYERS_CONV - number of stacked convolution layers
+    NUM_LAYERS_DENSE - number of stacked dense layers
+    NUM_LAYERS_DI - number of stacked feed forward layers before LSTM input (deep input)
+    NUM_LAYERS_DT - number of stacked feed forward layers between consecutive LSTM hidden states (deep transition)
+    NUM_LAYERS_DO - number of stacked feed forward layers after LSTM output (deep output)
+    NUM_LAYERS_LSTM - number of stacked LSTM layers
+    NUM_UNITS - number of units in each layer
+    PARAMS_TO_LOAD - path to a file with parameters to load (use if you want to continue an experiment)
+    PRINT_PROGRESS - print training, evaluation and data loading progress (a dot every 10% for each dataset)
+    SEED - random number generator seed (use to reproduce random results)
+    TEST_ID - and testing (value to report for best validation result)
+    TOL - a small number added to some denominators to prevent division by zero errors, bringing numerical stability
     TRAIN_IDS - which datafiles use for training
     VALID_ID - which for validation
-    TEST_ID - and testing (value to report for best validation result)
-    EVAL_IDS - extra datasets to evaluate
 
 """
 
@@ -67,35 +67,35 @@ import lstm_dt_layer
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-BATCH_SIZE', type=int, default=150)
-parser.add_argument('-TOL', type=float, default=1e-7)
-parser.add_argument('-REC_NUM_UNITS', nargs='+', type=int, default=[219, 219])
-parser.add_argument('-DENSE_NUM_UNITS', nargs='+', type=int, default=[219])
-parser.add_argument('-ATTENTION_NUM_UNITS', type=int, default=219)
-parser.add_argument('-ATTENTION_NUM_LAYERS', type=int, default=1)
-parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2)
-parser.add_argument('-LEARNING_RATE', type=float, default=1e-3)
-parser.add_argument('-DECAY', type=float, default=0.99)
-parser.add_argument('-NO_DECAY_EPOCHS', type=int, default=100)
-parser.add_argument('-MAX_GRAD', type=float, default=5)
-parser.add_argument('-NUM_EPOCHS', type=int, default=100)
-parser.add_argument('-SEED', type=int, default=1234)
-parser.add_argument('-INIT_RANGE', type=float, default=0.08)
-parser.add_argument('-EARLY_STOPPING', type=int, default=10)
 parser.add_argument('-CONV_SIZES', nargs='+', type=int, default=[3, 5, 7, 13, 21])
-parser.add_argument('-NUM_CONV_EACH', type=int, default=10)
-parser.add_argument('-CONV_NUM_LAYERS', type=int, default=1)
-parser.add_argument('-DT_NUM_LAYERS', type=int, default=0)
-parser.add_argument('-DI_NUM_LAYERS', type=int, default=0)
-parser.add_argument('-DO_NUM_LAYERS', type=int, default=0)
-parser.add_argument('-PRINT_PROGRESS', type=lambda x: x.lower() == 'true', default=True)
-parser.add_argument('-DATA_PATH', default='data\\semeval_subA\\2017\\production')
 parser.add_argument('-CREATE_DATA_CHUNKS', type=lambda x: x.lower() == 'true', default=False)
-parser.add_argument('-PARAMS_TO_LOAD', default=None)
+parser.add_argument('-DATA_PATH', default='data\\semeval_subA\\2017\\production')
+parser.add_argument('-DECAY', type=float, default=0.99)
+parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2)
 parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', '1st_word_only'], default='char')
+parser.add_argument('-EARLY_STOPPING', type=int, default=10)
+parser.add_argument('-EVAL_IDS', nargs='+', type=int, default=None)
+parser.add_argument('-INIT_RANGE', type=float, default=0.08)
+parser.add_argument('-LEARNING_RATE', type=float, default=1e-3)
+parser.add_argument('-MAX_GRAD', type=float, default=5)
+parser.add_argument('-NO_DECAY_EPOCHS', type=int, default=100)
+parser.add_argument('-NUM_CONV_EACH', type=int, default=10)
+parser.add_argument('-NUM_EPOCHS', type=int, default=100)
+parser.add_argument('-NUM_LAYERS_ATTENTION', type=int, default=1)
+parser.add_argument('-NUM_LAYERS_CONV', type=int, default=1)
+parser.add_argument('-NUM_LAYERS_DENSE', type=int, default=1)
+parser.add_argument('-NUM_LAYERS_DI', type=int, default=0)
+parser.add_argument('-NUM_LAYERS_DT', type=int, default=1)
+parser.add_argument('-NUM_LAYERS_DO', type=int, default=0)
+parser.add_argument('-NUM_LAYERS_LSTM', type=int, default=3)
+parser.add_argument('-NUM_UNITS', type=int, default=219)
+parser.add_argument('-PARAMS_TO_LOAD', default=None)
+parser.add_argument('-PRINT_PROGRESS', type=lambda x: x.lower() == 'true', default=True)
+parser.add_argument('-SEED', type=int, default=1234)
+parser.add_argument('-TEST_ID', type=int, default=3)
+parser.add_argument('-TOL', type=float, default=1e-7)
 parser.add_argument('-TRAIN_IDS', nargs='+', type=int, default=1)
 parser.add_argument('-VALID_ID', type=int, default=2)
-parser.add_argument('-TEST_ID', type=int, default=3)
-parser.add_argument('-EVAL_IDS', nargs='+', type=int, default=None)
 
 args = parser.parse_args()
 np.random.seed(args.SEED)
@@ -110,15 +110,15 @@ if args.PARAMS_TO_LOAD is not None:
 
 # Create output folder
 folder_name = time.strftime('%Y.%m.%d-%H.%M.%S')
-folder_name += '_semeval_%dLSTM' % len(args.REC_NUM_UNITS)
-folder_name += '_'.join([str(rnu) for rnu in args.REC_NUM_UNITS])
-folder_name += '_D' + '_'.join([str(dnu) for dnu in args.DENSE_NUM_UNITS])
-folder_name += '_A%dx%d' % (args.ATTENTION_NUM_UNITS, args.ATTENTION_NUM_LAYERS)
-folder_name += '_C%d' % args.CONV_NUM_LAYERS
-folder_name += '_NCE%d' % args.NUM_CONV_EACH
-folder_name += '_DT%d' % args.DT_NUM_LAYERS
-folder_name += '_DI%d' % args.DI_NUM_LAYERS
-folder_name += '_DO%d' % args.DO_NUM_LAYERS
+folder_name += '_semeval'
+folder_name += '_%d' % args.NUM_UNITS
+folder_name += '_%dC%d' % (args.NUM_LAYERS_CONV, args.NUM_CONV_EACH)
+folder_name += '_DI%d' % args.NUM_LAYERS_DI
+folder_name += '_%dLSTM' % args.NUM_LAYERS_LSTM
+folder_name += '_DT%d' % args.NUM_LAYERS_DT
+folder_name += '_DO%d' % args.NUM_LAYERS_DO
+folder_name += '_A%d' % args.NUM_LAYERS_ATTENTION
+folder_name += '_D%d' % args.NUM_LAYERS_DENSE
 folder_name += '_%.2f' % args.DROPOUT_FRACTION
 folder_name += '_%.6f' % args.LEARNING_RATE
 folder_name = os.path.join('output', folder_name)
@@ -192,7 +192,7 @@ l_mask = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len), input_
 
 # Convolution layers
 l_conv = l_inp
-for _ in range(args.CONV_NUM_LAYERS):
+for _ in range(args.NUM_LAYERS_CONV):
     # Dropout
     if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
         l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
@@ -211,8 +211,8 @@ for _ in range(args.CONV_NUM_LAYERS):
 # LSTM layers
 l_lstm = l_conv
 l_conv_num = int(np.prod(l_conv.output_shape[2:]))
-for i_layer, rec_num_units in enumerate(args.REC_NUM_UNITS):
-    only_return_final = args.ATTENTION_NUM_UNITS == 0 and i_layer == len(args.REC_NUM_UNITS) - 1
+for i_layer in range(args.NUM_LAYERS_LSTM):
+    only_return_final = args.NUM_LAYERS_ATTENTION == 0 and i_layer == args.NUM_LAYERS_LSTM - 1
 
     # Dropout
     if args.DROPOUT_TYPE == 'word':
@@ -222,12 +222,12 @@ for i_layer, rec_num_units in enumerate(args.REC_NUM_UNITS):
         l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=args.DROPOUT_FRACTION)
 
     # Deep input
-    for _ in range(args.DI_NUM_LAYERS):
+    for _ in range(args.NUM_LAYERS_DI):
         l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_leading_axes=2,
-                                           num_units=l_conv_num if i_layer == 0 else args.REC_NUM_UNITS[i_layer - 1])
+                                           num_units=l_conv_num if i_layer == 0 else args.NUM_UNITS)
 
     # LSTM
-    l_lstm = lstm_dt_layer.LSTMDTLayer(incoming=l_lstm, mask_input=l_mask, num_units=rec_num_units,
+    l_lstm = lstm_dt_layer.LSTMDTLayer(incoming=l_lstm, mask_input=l_mask, num_units=args.NUM_UNITS,
                                        ingate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
                                        forgetgate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
                                        outgate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
@@ -235,27 +235,27 @@ for i_layer, rec_num_units in enumerate(args.REC_NUM_UNITS):
                                                                 nonlinearity=lasagne.nonlinearities.tanh),
                                        learn_init=True, precompute_input=True,
                                        grad_clipping=args.MAX_GRAD, only_return_final=only_return_final,
-                                       num_dt_layers=args.DT_NUM_LAYERS)
+                                       num_dt_layers=args.NUM_LAYERS_DT)
 
     # Deep output
-    for _ in range(args.DO_NUM_LAYERS):
-        l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=args.REC_NUM_UNITS[i_layer], num_leading_axes=2)
+    for _ in range(args.NUM_LAYERS_DO):
+        l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=args.NUM_UNITS, num_leading_axes=2)
 
 # Attention
 l_att = l_lstm
-if args.ATTENTION_NUM_UNITS > 0 and args.ATTENTION_NUM_LAYERS > 0:
+if args.NUM_LAYERS_ATTENTION > 0:
     if args.DROPOUT_TYPE == 'word':
         l_att = word_dropout.WordDropoutLayer(incoming=l_att, word_input=l_inp, space=data.charset_map[' '],
-                                               p=args.DROPOUT_FRACTION)
+                                              p=args.DROPOUT_FRACTION)
     else:
         l_att = lasagne.layers.DropoutLayer(incoming=l_att, p=args.DROPOUT_FRACTION)
-    l_att = attention.AttentionLayer(incoming=l_att, num_units=args.ATTENTION_NUM_UNITS, mask_input=l_mask,
-                                      W=INI, v=INI, b=INI, num_att_layers=args.ATTENTION_NUM_LAYERS)
+    l_att = attention.AttentionLayer(incoming=l_att, num_units=args.NUM_UNITS, mask_input=l_mask,
+                                     W=INI, v=INI, b=INI, num_att_layers=args.NUM_LAYERS_ATTENTION)
 
 # Dense layer
 l_dense = l_att
-for dense_num_units in args.DENSE_NUM_UNITS:
-    l_dense = lasagne.layers.DenseLayer(incoming=l_dense, num_units=dense_num_units)
+for _ in range(args.NUM_LAYERS_DENSE):
+    l_dense = lasagne.layers.DenseLayer(incoming=l_dense, num_units=args.NUM_UNITS)
 
 # Softmax output
 l_out = lasagne.layers.DenseLayer(incoming=l_dense, num_units=data.n_labels,
