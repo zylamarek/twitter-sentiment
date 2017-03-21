@@ -101,19 +101,6 @@ args = parser.parse_args()
 np.random.seed(args.SEED)
 INI = lasagne.init.Uniform(args.INIT_RANGE)
 
-if isinstance(args.REC_NUM_UNITS, (int, long)):
-    args.REC_NUM_UNITS = [args.REC_NUM_UNITS]
-
-if isinstance(args.DENSE_NUM_UNITS, (int, long)):
-    args.DENSE_NUM_UNITS = [args.DENSE_NUM_UNITS]
-if args.DENSE_NUM_UNITS == [0]:
-    args.DENSE_NUM_UNITS = None
-
-if isinstance(args.CONV_SIZES, (int, long)):
-    args.CONV_SIZES = [args.CONV_SIZES]
-if args.CONV_SIZES == [0]:
-    args.CONV_SIZES = None
-
 # Check for existence here, so you don't waste time on data loading
 # and compilation just to get a silly error afterwards
 if args.PARAMS_TO_LOAD is not None:
@@ -214,13 +201,12 @@ for _ in range(args.CONV_NUM_LAYERS):
         l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=args.DROPOUT_FRACTION)
 
     # Convolution
-    if args.CONV_SIZES is not None:
-        l_sh = lasagne.layers.DimshuffleLayer(incoming=l_conv, pattern=(0, 2, 1))
-        l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
-                                              filter_size=conv_size, stride=1, pad='same')
-                   for conv_size in args.CONV_SIZES]
-        l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
-        l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
+    l_sh = lasagne.layers.DimshuffleLayer(incoming=l_conv, pattern=(0, 2, 1))
+    l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
+                                          filter_size=conv_size, stride=1, pad='same')
+               for conv_size in args.CONV_SIZES]
+    l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
+    l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
 
 l_lstm = l_conv
 l_conv_num = int(np.prod(l_conv.output_shape[2:]))
