@@ -267,7 +267,6 @@ class DataWrapper:
                     if chunk_id == self.n_chunks[self.current_data] - 1:
                         if self.shuffle_in_chunks_on_load:
                             self.__shuffle_data()
-                            # self.__shuffle_data(chunk_ids[chunk_id])
                         self.__save_chunk(chunk_ids[chunk_id])
 
                     if self.print_progress:
