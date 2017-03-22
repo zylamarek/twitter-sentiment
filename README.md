@@ -143,14 +143,32 @@ here please consult the legend below.
 All models were fixed to have approximately 1 or 2 millions parameters. Units in each layer were distributed equally, except
 for the convolution layer, which had a fixed number of params. The convolution layer had either 10 filters of each size
 (50 filters in total) or 20 filters of each size (100 filters in total). The filter sizes were always 3, 5, 7, 13 and 21
-characters. With 565 unique characters, a 1C10+3LSTM+DT1+A1+D1 1M have the parameters distributed as follows:<br><br>
-1C10: 565\*3\*10+10 + 565\*5\*10+10 + 565\*7\*10+10 + 565\*13\*10+10 + 565\*21\*10+10 = 276900 (28%)<br>
-1LSTM: 4\*(165\*50 + 165\*165 + 165) + 3\*165 + 2\*165 + 165\*165 + 165 = 170775 (17%)<br>
-2&3LSTM: 2\*(4\*(165\*165 + 165\*165 + 165) + 3\*165 + 2\*165 + 165\*165 + 165) = 2\*246675 = 493350 (2x25%)<br>
-A1: 165\*165 + 165 + 165 = 27555 (2.8%)<br>
-D1: 165\*165 + 165 = 27390 (2.7%)<br>
-SOFTMAX: 165\*3 + 3 = 498 (0.5%)<br>
-total: 996468
+characters. With 565 unique characters, a 1C10+3LSTM+DT1+A1+D1 1M have the parameters distributed as follows:
+
+<table>
+
+<tr><td align=right>1C10</td><td>28%</td>
+<td>276900 = 565*3*10+10 + 565*5*10+10 + 565*7*10+10 + 565*13*10+10 + 565*21*10+10</td></tr>
+
+<tr><td align=right>1LSTM</td><td>17%</td>
+<td>170775 = 4*(165*50 + 165*165 + 165) + 3*165 + 2*165 + 165*165 + 165</td></tr>
+
+<tr><td align=right>2&3LSTM</td><td>2x25%</td>
+<td>493350 = 2*246675 = 2*(4*(165*165 + 165*165 + 165) + 3*165 + 2*165 + 165*165 + 165)</td></tr>
+
+<tr><td align=right>A1</td><td>2.8%</td>
+<td>27555 = 165*165 + 165 + 165</td></tr>
+
+<tr><td align=right>D1</td><td>2.7%</td>
+<td>27390 = 165*165 + 165</td></tr>
+
+<tr><td align=right>SOFTMAX</td><td>0.5%</td>
+<td>498 = 165*3 + 3</td></tr>
+
+<tr><td align=right>total</td><td>100%</td>
+<td>996468</td></tr>
+
+</table>
 
 The computations were done with two different machines:
 a laptop with GeForce GT 730M (most 1M nets) and a PC with GeForce GTX 750 Ti (most 2M nets). In both cases
