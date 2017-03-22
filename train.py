@@ -8,38 +8,7 @@ update.
 Structure of the full model (DRP - dropout, DT - deep transition, DI - deep input, DO - deep output):
 INPUT - DRP - CONVOLUTION - N*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DENSE - SOFTMAX
 
-Parameters:
-    BATCH_SIZE - number of tweets in one training batch
-    CONV_SIZES - a list containing sizes of convolution filters
-    CREATE_DATA_CHUNKS - reload all the data (first run with True and then set to False to speed up data loading)
-    DATA_PATH - path to the directory containing the data (each file in this directory will get an id)
-    DECAY - LEARNING_RATE is multiplied by this factor in each epoch after NO_DECAY_EPOCHS
-    DROPOUT_FRACTION - probability of setting a connection to zero
-    DROPOUT_TYPE - {char, word, 1st_word_only} - which dropout to use; 1st_word_only uses word dropout right after input
-        layer and char in the rest
-    EARLY_STOPPING - number of epochs without recall increase after which the training stops
-    EVAL_IDS - extra datasets to evaluate
-    INIT_RANGE - range of initial values of parameters
-    LEARNING_RATE - RMSProp parameter
-    MAX_GRAD - gradient is limited to this value in LSTM layers
-    NO_DECAY_EPOCHS - look at DECAY
-    NUM_CONV_EACH - number of filters for each filter size
-    NUM_EPOCHS - max number of training epochs
-    NUM_LAYERS_ATTENTION - number of stacked dense layers in the attention mechanism
-    NUM_LAYERS_CONV - number of stacked convolution layers
-    NUM_LAYERS_DENSE - number of stacked dense layers
-    NUM_LAYERS_DI - number of stacked feed forward layers before LSTM input (deep input)
-    NUM_LAYERS_DT - number of stacked feed forward layers between consecutive LSTM hidden states (deep transition)
-    NUM_LAYERS_DO - number of stacked feed forward layers after LSTM output (deep output)
-    NUM_LAYERS_LSTM - number of stacked LSTM layers
-    NUM_UNITS - number of units in each layer
-    PARAMS_TO_LOAD - path to a file with parameters to load (use if you want to continue an experiment)
-    PRINT_PROGRESS - print training, evaluation and data loading progress (a dot every 10% for each dataset)
-    SEED - random number generator seed (use to reproduce random results)
-    TEST_ID - and testing (value to report for best validation result)
-    TOL - a small number added to some denominators to prevent division by zero errors, bringing numerical stability
-    TRAIN_IDS - which datafiles use for training
-    VALID_ID - which for validation
+Run the script with --help for parameters description.
 
 """
 
@@ -64,38 +33,59 @@ import evaluation_helper
 import lstm_dt_layer
 
 # Parse settings
-parser = argparse.ArgumentParser()
+description = 'The script trains a LSTM neural network model with attention mechanism and convolution inputs.'
+parser = argparse.ArgumentParser(description=description)
 
-parser.add_argument('-BATCH_SIZE', type=int, default=150)
-parser.add_argument('-CONV_SIZES', nargs='+', type=int, default=[3, 5, 7, 13, 21])
-parser.add_argument('-CREATE_DATA_CHUNKS', type=lambda x: x.lower() == 'true', default=False)
-parser.add_argument('-DATA_PATH', default='data\\semeval_subA\\2017\\production')
-parser.add_argument('-DECAY', type=float, default=0.99)
-parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2)
-parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', '1st_word_only'], default='char')
-parser.add_argument('-EARLY_STOPPING', type=int, default=10)
-parser.add_argument('-EVAL_IDS', nargs='+', type=int, default=None)
-parser.add_argument('-INIT_RANGE', type=float, default=0.08)
-parser.add_argument('-LEARNING_RATE', type=float, default=1e-3)
-parser.add_argument('-MAX_GRAD', type=float, default=5)
-parser.add_argument('-NO_DECAY_EPOCHS', type=int, default=100)
-parser.add_argument('-NUM_CONV_EACH', type=int, default=10)
-parser.add_argument('-NUM_EPOCHS', type=int, default=100)
-parser.add_argument('-NUM_LAYERS_ATTENTION', type=int, default=1)
-parser.add_argument('-NUM_LAYERS_CONV', type=int, default=1)
-parser.add_argument('-NUM_LAYERS_DENSE', type=int, default=1)
-parser.add_argument('-NUM_LAYERS_DI', type=int, default=0)
-parser.add_argument('-NUM_LAYERS_DT', type=int, default=1)
-parser.add_argument('-NUM_LAYERS_DO', type=int, default=0)
-parser.add_argument('-NUM_LAYERS_LSTM', type=int, default=3)
-parser.add_argument('-NUM_UNITS', type=int, default=219)
-parser.add_argument('-PARAMS_TO_LOAD', default=None)
-parser.add_argument('-PRINT_PROGRESS', type=lambda x: x.lower() == 'true', default=True)
-parser.add_argument('-SEED', type=int, default=1234)
-parser.add_argument('-TEST_ID', type=int, default=3)
-parser.add_argument('-TOL', type=float, default=1e-7)
-parser.add_argument('-TRAIN_IDS', nargs='+', type=int, default=1)
-parser.add_argument('-VALID_ID', type=int, default=2)
+parser.add_argument('-BATCH_SIZE', type=int, default=150, help='number of tweets in one training batch')
+parser.add_argument('-CONV_SIZES', nargs='+', type=int, default=[3, 5, 7, 13, 21],
+                    help='a list containing sizes of convolution filters')
+parser.add_argument('-CREATE_DATA_CHUNKS', action='store_const', const=True, default=False,
+                    help='reload all the data (first run with the flag set and then without to speed up data loading)')
+parser.add_argument('-DATA_PATH', default='data\\semeval_subA\\2017\\production',
+                    help='path to the directory containing the data (each file in this directory will get an id)')
+parser.add_argument('-DECAY', type=float, default=0.99,
+                    help='LEARNING_RATE is multiplied by DECAY in each epoch after NO_DECAY_EPOCHS')
+parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2, help='probability of setting a connection to zero')
+parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', '1st_word_only'], default='char',
+                    help='which dropout to use; 1st_word_only uses word dropout right after input layer and char in \
+                    the rest')
+parser.add_argument('-EARLY_STOPPING', type=int, default=10,
+                    help='number of epochs without recall increase after which the training stops')
+parser.add_argument('-EVAL_IDS', nargs='+', type=int, default=None, help='extra datasets to evaluate')
+parser.add_argument('-INIT_RANGE', type=float, default=0.08, help='range of initial values of parameters')
+parser.add_argument('-LEARNING_RATE', type=float, default=1e-3, help='RMSProp parameter')
+parser.add_argument('-MAX_GRAD', type=float, default=5, help='gradient is limited to this value in LSTM layers')
+parser.add_argument('-NO_DECAY_EPOCHS', type=int, default=100,
+                    help='LEARNING_RATE is multiplied by DECAY in each epoch after NO_DECAY_EPOCHS')
+parser.add_argument('-NUM_CONV_EACH', type=int, default=10, help='number of convolution filters for each filter size')
+parser.add_argument('-NUM_EPOCHS', type=int, default=100, help='max number of training epochs')
+parser.add_argument('-NUM_LAYERS_ATTENTION', type=int, default=1,
+                    help='number of stacked dense layers in the attention mechanism')
+parser.add_argument('-NUM_LAYERS_CONV', type=int, default=1, help='number of stacked convolution layers')
+parser.add_argument('-NUM_LAYERS_DENSE', type=int, default=1, help='number of stacked dense layers')
+parser.add_argument('-NUM_LAYERS_DI', type=int, default=0,
+                    help='number of stacked feed forward layers before LSTM input (deep input)')
+parser.add_argument('-NUM_LAYERS_DT', type=int, default=1,
+                    help='number of stacked feed forward layers between consecutive LSTM hidden states (deep \
+                    transition)')
+parser.add_argument('-NUM_LAYERS_DO', type=int, default=0,
+                    help='number of stacked feed forward layers after LSTM output (deep output)')
+parser.add_argument('-NUM_LAYERS_LSTM', type=int, default=3,
+                    help='number of stacked LSTM layers')
+parser.add_argument('-NUM_UNITS', type=int, default=219, help='number of units in each layer')
+parser.add_argument('-PARAMS_TO_LOAD', default=None,
+                    help='path to a file with parameters to load (use if you want to continue an experiment)')
+parser.add_argument('-SEED', type=int, default=1234,
+                    help='random number generator seed (use to reproduce random results)')
+parser.add_argument('-SUPPRESS_PRINT_PROGRESS', action='store_const', const=True, default=False,
+                    help='if not set, training, evaluation and data loading prints a dot every 10%% for each dataset')
+parser.add_argument('-TEST_ID', type=int, default=3,
+                    help='datafiles to be used for testing (value to report for best validation result)')
+parser.add_argument('-TOL', type=float, default=1e-7,
+                    help='a small number added to some denominators to prevent division by zero errors, bringing \
+                    numerical stability')
+parser.add_argument('-TRAIN_IDS', nargs='+', type=int, default=1, help='datafiles to be used for training')
+parser.add_argument('-VALID_ID', type=int, default=2, help='datafiles to be used for validation')
 
 args = parser.parse_args()
 np.random.seed(args.SEED)
@@ -163,7 +153,7 @@ data = data_wrapper.DataWrapper([os.path.join(args.DATA_PATH, file_name) for fil
                                 create_chunks=args.CREATE_DATA_CHUNKS, rng_seed=args.SEED,
                                 shuffle_chunks_on_load=True, shuffle_in_chunks_on_load=True,
                                 shuffle_batch_on_return=True, shuffle_in_chunk_on_chunk_reload=True,
-                                print_progress=args.PRINT_PROGRESS
+                                print_progress=not args.SUPPRESS_PRINT_PROGRESS
                                 )
 logger.info('Loading data took %.2fs' % (time.time() - t0))
 
@@ -309,7 +299,7 @@ logger.info('Building the model took %.2fs' % (time.time() - t0))
 
 evaluation = evaluation_helper.EvaluationHelper(f_eval=f_eval, data=data, val_id=data.valid_id, test_id=data.test_id,
                                                 eval_ids=data.train_ids + data.eval_ids,
-                                                print_progress=args.PRINT_PROGRESS)
+                                                print_progress=not args.SUPPRESS_PRINT_PROGRESS)
 
 # Load network parameters
 if args.PARAMS_TO_LOAD is not None:
@@ -351,15 +341,15 @@ for epoch in range(args.NUM_EPOCHS):
 
     # Train all the batches in training datasets
     for i_data in data.train_ids:
-        if args.PRINT_PROGRESS:
+        if not args.SUPPRESS_PRINT_PROGRESS:
             print('train ' + data.dataset_names[i_data] + ': ', end='')
         step = int(data.n_batches[i_data] / 10)
         data.set_current_data(i_data)
         for i_batch, (x_batch, x_mask_batch, y_batch) in enumerate(data):
             f_train(x_batch, y_batch, x_mask_batch)
-            if args.PRINT_PROGRESS and not (i_batch + 1) % step:
+            if not args.SUPPRESS_PRINT_PROGRESS and not (i_batch + 1) % step:
                 print('.', end='')
-        if args.PRINT_PROGRESS:
+        if not args.SUPPRESS_PRINT_PROGRESS:
             print('\n', end='')
 
     # Apply learning rate decay
