@@ -279,12 +279,9 @@ logger.info('Parameters:')
 logger.info([{a.name, a.get_value().shape} for a in all_params])
 logger.info('-' * 80)
 
-# Get gradient
-all_grads = T.grad(cost_train, all_params)
-
 # Define update rules
 sh_lr = theano.shared(lasagne.utils.floatX(args.LEARNING_RATE))
-updates = lasagne.updates.rmsprop(all_grads, all_params, learning_rate=sh_lr)
+updates = lasagne.updates.rmsprop(cost_train, all_params, learning_rate=sh_lr)
 
 # Define evaluation and train functions
 fun_inp = [sym_x, sym_y, sym_x_mask]
