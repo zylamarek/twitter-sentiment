@@ -290,7 +290,7 @@ logger.info('compiling f_eval...')
 f_eval = theano.function(fun_inp, [cost_eval, eval_out], allow_input_downcast=True)
 
 logger.info('compiling f_train...')
-f_train = theano.function(fun_inp, [cost_train], updates=updates, allow_input_downcast=True)
+f_train = theano.function(fun_inp, [], updates=updates, allow_input_downcast=True)
 
 logger.info('Building the model took %.2fs' % (time.time() - t0))
 
