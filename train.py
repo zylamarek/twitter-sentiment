@@ -6,7 +6,7 @@ sentiment. The summed crossentropy is used as the training loss function. RMSPro
 update.
 
 Structure of the full model (DRP - dropout, DT - deep transition, DI - deep input, DO - deep output):
-INPUT - DRP - CONVOLUTION - N*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DENSE - SOFTMAX
+INPUT - DRP - CONVOLUTION - MAXPOOL - N*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DENSE - SOFTMAX
 
 Run the script with --help for parameters description.
 
@@ -72,6 +72,8 @@ parser.add_argument('-NUM_LAYERS_DO', type=int, default=0,
                     help='number of stacked feed forward layers after LSTM output (deep output)')
 parser.add_argument('-NUM_LAYERS_LSTM', type=int, default=3,
                     help='number of stacked LSTM layers')
+parser.add_argument('-NUM_LAYERS_MAXPOOL', type=int, default=0,
+                    help='number of stacked maxpool layers')
 parser.add_argument('-NUM_UNITS', type=int, default=219, help='number of units in each layer')
 parser.add_argument('-PARAMS_TO_LOAD', default=None,
                     help='path to a file with parameters to load (use if you want to continue an experiment)')
@@ -103,6 +105,7 @@ folder_name = time.strftime('%Y.%m.%d-%H.%M.%S')
 folder_name += '_semeval'
 folder_name += '_%d' % args.NUM_UNITS
 folder_name += '_%dC%d' % (args.NUM_LAYERS_CONV, args.NUM_CONV_EACH)
+folder_name += '_MP%d' % args.NUM_LAYERS_MAXPOOL
 folder_name += '_DI%d' % args.NUM_LAYERS_DI
 folder_name += '_%dLSTM' % args.NUM_LAYERS_LSTM
 folder_name += '_DT%d' % args.NUM_LAYERS_DT
@@ -198,8 +201,19 @@ for _ in range(args.NUM_LAYERS_CONV):
     l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
     l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
 
+# Max pool layers
+l_mp = l_conv
+for _ in range(args.NUM_LAYERS_MAXPOOL):
+    l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
+    l_mp = lasagne.layers.MaxPool1DLayer(l_mp, 2, stride=2)
+    l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
+
+    l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 'x', 1))
+    l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=2)
+    l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 2))
+
 # LSTM layers
-l_lstm = l_conv
+l_lstm = l_mp
 l_conv_num = int(np.prod(l_conv.output_shape[2:]))
 for i_layer in range(args.NUM_LAYERS_LSTM):
     only_return_final = args.NUM_LAYERS_ATTENTION == 0 and i_layer == args.NUM_LAYERS_LSTM - 1
