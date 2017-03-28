@@ -45,6 +45,8 @@ parser.add_argument('-DATA_PATH', default='data\\semeval_subA\\2017\\production'
                     help='path to the directory containing the data (each file in this directory will get an id)')
 parser.add_argument('-DECAY', type=float, default=0.99,
                     help='LEARNING_RATE is multiplied by DECAY in each epoch after NO_DECAY_EPOCHS')
+parser.add_argument('-CONV_STRIDE_2', action='store_const', const=True, default=False,
+                    help='Uses stride=2 in each convolution layer, except the first')
 parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2, help='probability of setting a connection to zero')
 parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', '1st_word_only'], default='char',
                     help='which dropout to use; 1st_word_only uses word dropout right after input layer and char in \
@@ -105,6 +107,8 @@ folder_name = time.strftime('%Y.%m.%d-%H.%M.%S')
 folder_name += '_semeval'
 folder_name += '_%d' % args.NUM_UNITS
 folder_name += '_%dC%d' % (args.NUM_LAYERS_CONV, args.NUM_CONV_EACH)
+if args.CONV_STRIDE_2:
+    folder_name += 's2'
 folder_name += '_MP%d' % args.NUM_LAYERS_MAXPOOL
 folder_name += '_DI%d' % args.NUM_LAYERS_DI
 folder_name += '_%dLSTM' % args.NUM_LAYERS_LSTM
@@ -185,7 +189,7 @@ l_mask = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len), input_
 
 # Convolution layers
 l_conv = l_inp
-for _ in range(args.NUM_LAYERS_CONV):
+for i_layer in range(args.NUM_LAYERS_CONV):
     # Dropout
     if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
         l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
@@ -193,13 +197,24 @@ for _ in range(args.NUM_LAYERS_CONV):
     else:
         l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=args.DROPOUT_FRACTION)
 
+    if i_layer > 0 and args.CONV_STRIDE_2:
+        conv_stride = 2
+    else:
+        conv_stride = 1
+
     # Convolution
     l_sh = lasagne.layers.DimshuffleLayer(incoming=l_conv, pattern=(0, 2, 1))
     l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
-                                          filter_size=conv_size, stride=1, pad='same')
+                                          filter_size=conv_size, stride=conv_stride, pad='same')
                for conv_size in args.CONV_SIZES]
     l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
     l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
+
+    # Shorten the mask
+    if conv_stride > 1:
+        l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 'x', 1))
+        l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=conv_stride, pad=l_mask.output_shape[2] % conv_stride)
+        l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 2))
 
 # Max pool layers
 l_mp = l_conv
