@@ -46,7 +46,7 @@ parser.add_argument('-DATA_PATH', default='data\\semeval_subA\\2017\\production'
 parser.add_argument('-DECAY', type=float, default=0.99,
                     help='LEARNING_RATE is multiplied by DECAY in each epoch after NO_DECAY_EPOCHS')
 parser.add_argument('-CONV_STRIDE_2', action='store_const', const=True, default=False,
-                    help='Uses stride=2 in each convolution layer, except the first')
+                    help='uses stride=2 in each convolution layer, except the first')
 parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2, help='probability of setting a connection to zero')
 parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', '1st_word_only'], default='char',
                     help='which dropout to use; 1st_word_only uses word dropout right after input layer and char in \
@@ -81,6 +81,8 @@ parser.add_argument('-PARAMS_TO_LOAD', default=None,
                     help='path to a file with parameters to load (use if you want to continue an experiment)')
 parser.add_argument('-SEED', type=int, default=1234,
                     help='random number generator seed (use to reproduce random results)')
+parser.add_argument('-SHOW_MODEL', action='store_const', const=True, default=False,
+                    help='lists all the layers and their output sizes')
 parser.add_argument('-SUPPRESS_PRINT_PROGRESS', action='store_const', const=True, default=False,
                     help='if not set, training, evaluation and data loading prints a dot every 10%% for each dataset')
 parser.add_argument('-TEST_ID', type=int, default=3,
@@ -280,6 +282,9 @@ for _ in range(args.NUM_LAYERS_DENSE):
 l_out = lasagne.layers.DenseLayer(incoming=l_dense, num_units=data.n_labels,
                                   nonlinearity=lasagne.nonlinearities.softmax)
 
+if args.SHOW_MODEL:
+    for layer in lasagne.layers.get_all_layers(l_out):
+        logger.info(str(layer.output_shape) + ' ' + layer.__class__.__name__)
 
 # Define loss function
 def cross_ent(net_output, target, mask):
