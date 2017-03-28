@@ -205,11 +205,11 @@ for _ in range(args.NUM_LAYERS_CONV):
 l_mp = l_conv
 for _ in range(args.NUM_LAYERS_MAXPOOL):
     l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
-    l_mp = lasagne.layers.MaxPool1DLayer(l_mp, 2, stride=2)
+    l_mp = lasagne.layers.MaxPool1DLayer(l_mp, 2, stride=2, pad=l_mp.output_shape[2] % 2)
     l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
 
     l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 'x', 1))
-    l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=2)
+    l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=2, pad=l_mask.output_shape[2] % 2)
     l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 2))
 
 # LSTM layers
