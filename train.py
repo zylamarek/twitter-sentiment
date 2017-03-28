@@ -374,11 +374,14 @@ for epoch in range(args.NUM_EPOCHS):
     for i_data in data.train_ids:
         if not args.SUPPRESS_PRINT_PROGRESS:
             print('train ' + data.dataset_names[i_data] + ': ', end='')
-        step = int(data.n_batches[i_data] / 10)
+        step = max(data.n_batches[i_data] // 10 + 1, 1)
+        offset = step * 10 - data.n_batches[i_data] + 1
+        if not args.SUPPRESS_PRINT_PROGRESS and data.n_batches[i_data] < 10:
+            print('.' * (10 - data.n_batches[i_data]), end='')
         data.set_current_data(i_data)
         for i_batch, (x_batch, x_mask_batch, y_batch) in enumerate(data):
             f_train(x_batch, y_batch, x_mask_batch)
-            if not args.SUPPRESS_PRINT_PROGRESS and not (i_batch + 1) % step:
+            if not args.SUPPRESS_PRINT_PROGRESS and not (i_batch + offset) % step:
                 print('.', end='')
         if not args.SUPPRESS_PRINT_PROGRESS:
             print('\n', end='')

@@ -101,7 +101,10 @@ class EvaluationHelper:
 
         if self.print_progress:
             print('evaluate ' + self.data.dataset_names[data_id] + ': ', end='')
-        step = self.data.n_batches[data_id] // 10
+        step = max(self.data.n_batches[data_id] // 10 + 1, 1)
+        offset = step * 10 - self.data.n_batches[data_id] + 1
+        if self.print_progress and self.data.n_batches[data_id] < 10:
+            print('.' * (10 - self.data.n_batches[data_id]), end='')
         self.data.set_current_data(data_id)
         for i_batch, (x_batch, x_mask_batch, y_batch) in enumerate(self.data):
             # get output
@@ -122,7 +125,7 @@ class EvaluationHelper:
                 if c < self.data.n_labels * self.data.n_labels and i < self.data.n_labels * self.data.n_labels:
                     counts[cm_order[c]] += label_counts[i]
 
-            if self.print_progress and not (i_batch + 1) % step:
+            if self.print_progress and not (i_batch + offset) % step:
                 print('.', end='')
 
         if self.print_progress:

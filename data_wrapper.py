@@ -214,7 +214,10 @@ class DataWrapper:
                 with open(path, 'rb') as pfile:
                     if self.print_progress:
                         print(self.dataset_names[i_path] + ': ', end='')
-                    step = max(self.n_tweets[i_path] // 10, 1)
+                    step = max(self.n_tweets[i_path] // 10 + 1, 1)
+                    offset = step * 10 - self.n_tweets[i_path] + 1
+                    if self.print_progress and self.n_tweets[i_path] < 10:
+                        print('.' * (10 - self.n_tweets[i_path]), end='')
 
                     chunk_ids = range(self.n_chunks[i_path])
                     if self.shuffle_chunks_on_load:
@@ -235,7 +238,7 @@ class DataWrapper:
                     chunk_id = 0
 
                     for iTweet, tweet_entry in enumerate(tweets):
-                        if self.print_progress and not (iTweet + 1) % step:
+                        if self.print_progress and not (iTweet + offset) % step:
                             print('.', end='')
 
                         iTweet %= self.chunk_size
