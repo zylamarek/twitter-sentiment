@@ -6,6 +6,8 @@ f_eval - function accepting (x_batch, y_batch, x_mask_batch) as arguments and re
 All val_id, test_id and eval_ids are evaluated, in order of ascending ids. If you wish to evaluate the training
 datasets - include them in the eval_ids.
 
+batch_mul indicates how many batches should be evaluated at one time.
+
 """
 
 from __future__ import print_function, division
@@ -17,7 +19,7 @@ __all__ = [
 
 
 class EvaluationHelper:
-    def __init__(self, f_eval, data, val_id, test_id=None, eval_ids=None, print_progress=True, tol=1e-7):
+    def __init__(self, f_eval, data, val_id, test_id=None, eval_ids=None, print_progress=True, tol=1e-7, batch_mul=5):
 
         self.f_eval = f_eval
         self.data = data
@@ -40,6 +42,8 @@ class EvaluationHelper:
 
         self.print_progress = print_progress
         self.tol = tol
+
+        self.batch_mul = batch_mul
 
         self.reset()
 
@@ -106,7 +110,32 @@ class EvaluationHelper:
         if self.print_progress and self.data.n_batches[data_id] < 10:
             print('.' * (10 - self.data.n_batches[data_id]), end='')
         self.data.set_current_data(data_id)
-        for i_batch, (x_batch, x_mask_batch, y_batch) in enumerate(self.data):
+
+        def big_batch_data():
+            def reset_big_batch():
+                x_big = np.zeros((self.batch_mul * self.data.batch_size, self.data.max_len, self.data.charset_size),
+                                 dtype=np.uint32)
+                x_mask_big = np.zeros((self.batch_mul * self.data.batch_size, self.data.max_len), dtype=np.uint32)
+                y_big = np.zeros((self.batch_mul * self.data.batch_size), dtype=np.uint32)
+                return x_big, x_mask_big, y_big
+
+            x_batch_big, x_mask_batch_big, y_batch_big = reset_big_batch()
+            for i_batch, (x_batch, x_mask_batch, y_batch) in enumerate(self.data):
+                i_sub_batch = i_batch % self.batch_mul
+                batch_slice = range(i_sub_batch * self.data.batch_size, (i_sub_batch + 1) * self.data.batch_size)
+
+                x_batch_big[batch_slice] = x_batch
+                x_mask_batch_big[batch_slice] = x_mask_batch
+                y_batch_big[batch_slice] = y_batch
+
+                if not (i_batch + 1) % self.batch_mul:
+                    yield (x_batch_big, x_mask_batch_big, y_batch_big)
+                    x_batch_big, x_mask_batch_big, y_batch_big = reset_big_batch()
+
+            if self.data.n_batches[data_id] % self.batch_mul:
+                yield (x_batch_big, x_mask_batch_big, y_batch_big)
+
+        for i_batch, (x_batch, x_mask_batch, y_batch) in enumerate(big_batch_data()):
             # get output
             cost, out = self.f_eval(x_batch, y_batch, x_mask_batch)
             predicted_labels = np.argmax(out, axis=-1).flatten()

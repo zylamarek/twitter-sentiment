@@ -37,6 +37,7 @@ description = 'The script trains a LSTM neural network model with attention mech
 parser = argparse.ArgumentParser(description=description)
 
 parser.add_argument('-BATCH_SIZE', type=int, default=150, help='number of tweets in one training batch')
+parser.add_argument('-BATCH_MUL_EVAL', type=int, default=7, help='number of batches to evaluate at once')
 parser.add_argument('-CONV_SIZES', nargs='+', type=int, default=[3, 5, 7, 13, 21],
                     help='a list containing sizes of convolution filters')
 parser.add_argument('-CREATE_DATA_CHUNKS', action='store_const', const=True, default=False,
@@ -186,8 +187,8 @@ sym_y = T.ivector()
 t0 = time.time()
 
 # Input
-l_inp = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len, data.charset_size), input_var=sym_x)
-l_mask = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len), input_var=sym_x_mask)
+l_inp = lasagne.layers.InputLayer(shape=(None, data.max_len, data.charset_size), input_var=sym_x)
+l_mask = lasagne.layers.InputLayer(shape=(None, data.max_len), input_var=sym_x_mask)
 
 # Convolution layers
 l_conv = l_inp
@@ -332,7 +333,7 @@ f_train = theano.function(fun_inp, [], updates=updates, allow_input_downcast=Tru
 logger.info('Building the model took %.2fs' % (time.time() - t0))
 
 evaluation = evaluation_helper.EvaluationHelper(f_eval=f_eval, data=data, val_id=data.valid_id, test_id=data.test_id,
-                                                eval_ids=data.train_ids + data.eval_ids,
+                                                eval_ids=data.train_ids + data.eval_ids, batch_mul=args.BATCH_MUL_EVAL,
                                                 print_progress=not args.SUPPRESS_PRINT_PROGRESS)
 
 # Load network parameters
