@@ -342,9 +342,9 @@ if args.PARAMS_TO_LOAD is not None:
     if l_params.__len__() == all_params.__len__():
         logger.info('Numbers of variables the same.')
         f_shapes = True
-        for i_l in range(l_params.__len__()):
-            if l_params[i_l].get_value().shape == all_params[i_l].get_value().shape:
-                all_params[i_l].set_value(l_params[i_l].get_value())
+        for l_p, a_p in zip(l_params, all_params):
+            if l_p.get_value().shape == a_p.get_value().shape:
+                a_p.set_value(l_p.get_value())
             else:
                 f_shapes = False
         if f_shapes:
