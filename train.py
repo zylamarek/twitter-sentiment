@@ -283,8 +283,11 @@ l_out = lasagne.layers.DenseLayer(incoming=l_dense, num_units=data.n_labels,
                                   nonlinearity=lasagne.nonlinearities.softmax)
 
 if args.SHOW_MODEL:
+    logger.info('-' * 80)
+    logger.info('Model - layers and their output shapes:')
     for layer in lasagne.layers.get_all_layers(l_out):
         logger.info(str(layer.output_shape) + ' ' + layer.__class__.__name__)
+    logger.info('-' * 80)
 
 # Define loss function
 def cross_ent(net_output, target, mask):
