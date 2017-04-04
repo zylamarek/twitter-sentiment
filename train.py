@@ -37,7 +37,7 @@ description = 'The script trains a LSTM neural network model with attention mech
 parser = argparse.ArgumentParser(description=description)
 
 parser.add_argument('-BATCH_SIZE', type=int, default=150, help='number of tweets in one training batch')
-parser.add_argument('-BATCH_MUL_EVAL', type=int, default=7, help='number of batches to evaluate at once')
+parser.add_argument('-BATCH_MUL_EVAL', type=int, default=9, help='number of batches to evaluate at once')
 parser.add_argument('-CONV_SIZES', nargs='+', type=int, default=[3, 5, 7, 13, 21],
                     help='a list containing sizes of convolution filters')
 parser.add_argument('-CREATE_DATA_CHUNKS', action='store_const', const=True, default=False,
@@ -186,109 +186,118 @@ sym_y = T.ivector()
 # Build the model
 t0 = time.time()
 
-# Input
-l_inp = lasagne.layers.InputLayer(shape=(None, data.max_len, data.charset_size), input_var=sym_x)
-l_mask = lasagne.layers.InputLayer(shape=(None, data.max_len), input_var=sym_x_mask)
+l_out = []
+for batch_size in (args.BATCH_SIZE, args.BATCH_MUL_EVAL * args.BATCH_SIZE):
+    # Input
+    l_inp = lasagne.layers.InputLayer(shape=(batch_size, data.max_len, data.charset_size), input_var=sym_x)
+    l_mask = lasagne.layers.InputLayer(shape=(batch_size, data.max_len), input_var=sym_x_mask)
 
-# Convolution layers
-l_conv = l_inp
-for i_layer in range(args.NUM_LAYERS_CONV):
-    # Dropout
-    if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
-        l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
-                                               p=args.DROPOUT_FRACTION)
-    else:
-        l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=args.DROPOUT_FRACTION)
+    # Convolution layers
+    l_conv = l_inp
+    for i_layer in range(args.NUM_LAYERS_CONV):
+        # Dropout
+        if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
+            l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
+                                                   p=args.DROPOUT_FRACTION)
+        else:
+            l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=args.DROPOUT_FRACTION)
 
-    if i_layer > 0 and args.CONV_STRIDE_2:
-        conv_stride = 2
-    else:
-        conv_stride = 1
+        if i_layer > 0 and args.CONV_STRIDE_2:
+            conv_stride = 2
+        else:
+            conv_stride = 1
 
-    # Convolution
-    l_sh = lasagne.layers.DimshuffleLayer(incoming=l_conv, pattern=(0, 2, 1))
-    l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
-                                          filter_size=conv_size, stride=conv_stride, pad='same')
-               for conv_size in args.CONV_SIZES]
-    l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
-    l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
+        # Convolution
+        l_sh = lasagne.layers.DimshuffleLayer(incoming=l_conv, pattern=(0, 2, 1))
+        l_convs = [lasagne.layers.Conv1DLayer(incoming=l_sh, num_filters=args.NUM_CONV_EACH,
+                                              filter_size=conv_size, stride=conv_stride, pad='same')
+                   for conv_size in args.CONV_SIZES]
+        l_concat = lasagne.layers.ConcatLayer(incomings=l_convs, axis=1)
+        l_conv = lasagne.layers.DimshuffleLayer(incoming=l_concat, pattern=(0, 2, 1))
 
-    # Shorten the mask
-    if conv_stride > 1:
+        # Shorten the mask
+        if conv_stride > 1:
+            l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 'x', 1))
+            l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=conv_stride,
+                                                   pad=l_mask.output_shape[2] % conv_stride)
+            l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 2))
+
+    # Max pool layers
+    l_mp = l_conv
+    for _ in range(args.NUM_LAYERS_MAXPOOL):
+        l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
+        l_mp = lasagne.layers.MaxPool1DLayer(l_mp, 2, stride=2, pad=l_mp.output_shape[2] % 2)
+        l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
+
         l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 'x', 1))
-        l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=conv_stride, pad=l_mask.output_shape[2] % conv_stride)
+        l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=2, pad=l_mask.output_shape[2] % 2)
         l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 2))
 
-# Max pool layers
-l_mp = l_conv
-for _ in range(args.NUM_LAYERS_MAXPOOL):
-    l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
-    l_mp = lasagne.layers.MaxPool1DLayer(l_mp, 2, stride=2, pad=l_mp.output_shape[2] % 2)
-    l_mp = lasagne.layers.DimshuffleLayer(incoming=l_mp, pattern=(0, 2, 1))
+    # LSTM layers
+    l_lstm = l_mp
+    l_conv_num = int(np.prod(l_conv.output_shape[2:]))
+    for i_layer in range(args.NUM_LAYERS_LSTM):
+        only_return_final = args.NUM_LAYERS_ATTENTION == 0 and i_layer == args.NUM_LAYERS_LSTM - 1
 
-    l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 'x', 1))
-    l_mask = lasagne.layers.MaxPool1DLayer(l_mask, 2, stride=2, pad=l_mask.output_shape[2] % 2)
-    l_mask = lasagne.layers.DimshuffleLayer(incoming=l_mask, pattern=(0, 2))
+        # Dropout
+        if args.DROPOUT_TYPE == 'word':
+            l_lstm = word_dropout.WordDropoutLayer(incoming=l_lstm, word_input=l_inp, space=data.charset_map[' '],
+                                                   p=args.DROPOUT_FRACTION)
+        else:
+            l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=args.DROPOUT_FRACTION)
 
-# LSTM layers
-l_lstm = l_mp
-l_conv_num = int(np.prod(l_conv.output_shape[2:]))
-for i_layer in range(args.NUM_LAYERS_LSTM):
-    only_return_final = args.NUM_LAYERS_ATTENTION == 0 and i_layer == args.NUM_LAYERS_LSTM - 1
+        # Deep input
+        for _ in range(args.NUM_LAYERS_DI):
+            l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_leading_axes=2,
+                                               num_units=l_conv_num if i_layer == 0 else args.NUM_UNITS)
 
-    # Dropout
-    if args.DROPOUT_TYPE == 'word':
-        l_lstm = word_dropout.WordDropoutLayer(incoming=l_lstm, word_input=l_inp, space=data.charset_map[' '],
-                                               p=args.DROPOUT_FRACTION)
-    else:
-        l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=args.DROPOUT_FRACTION)
+        # LSTM
+        l_lstm = lstm_dt_layer.LSTMDTLayer(incoming=l_lstm, mask_input=l_mask, num_units=args.NUM_UNITS,
+                                           ingate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
+                                           forgetgate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
+                                           outgate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
+                                           cell=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=None,
+                                                                    nonlinearity=lasagne.nonlinearities.tanh),
+                                           learn_init=True, precompute_input=True,
+                                           grad_clipping=args.MAX_GRAD, only_return_final=only_return_final,
+                                           num_dt_layers=args.NUM_LAYERS_DT)
 
-    # Deep input
-    for _ in range(args.NUM_LAYERS_DI):
-        l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_leading_axes=2,
-                                           num_units=l_conv_num if i_layer == 0 else args.NUM_UNITS)
+        # Deep output
+        for _ in range(args.NUM_LAYERS_DO):
+            l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=args.NUM_UNITS, num_leading_axes=2)
 
-    # LSTM
-    l_lstm = lstm_dt_layer.LSTMDTLayer(incoming=l_lstm, mask_input=l_mask, num_units=args.NUM_UNITS,
-                                       ingate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
-                                       forgetgate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
-                                       outgate=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=INI),
-                                       cell=lasagne.layers.Gate(W_in=INI, W_hid=INI, W_cell=None,
-                                                                nonlinearity=lasagne.nonlinearities.tanh),
-                                       learn_init=True, precompute_input=True,
-                                       grad_clipping=args.MAX_GRAD, only_return_final=only_return_final,
-                                       num_dt_layers=args.NUM_LAYERS_DT)
+    # Attention
+    l_att = l_lstm
+    if args.NUM_LAYERS_ATTENTION > 0:
+        if args.DROPOUT_TYPE == 'word':
+            l_att = word_dropout.WordDropoutLayer(incoming=l_att, word_input=l_inp, space=data.charset_map[' '],
+                                                  p=args.DROPOUT_FRACTION)
+        else:
+            l_att = lasagne.layers.DropoutLayer(incoming=l_att, p=args.DROPOUT_FRACTION)
+        l_att = attention.AttentionLayer(incoming=l_att, num_units=args.NUM_UNITS, mask_input=l_mask,
+                                         W=INI, v=INI, b=INI, num_att_layers=args.NUM_LAYERS_ATTENTION)
 
-    # Deep output
-    for _ in range(args.NUM_LAYERS_DO):
-        l_lstm = lasagne.layers.DenseLayer(incoming=l_lstm, num_units=args.NUM_UNITS, num_leading_axes=2)
+    # Dense layer
+    l_dense = l_att
+    for _ in range(args.NUM_LAYERS_DENSE):
+        l_dense = lasagne.layers.DenseLayer(incoming=l_dense, num_units=args.NUM_UNITS)
 
-# Attention
-l_att = l_lstm
-if args.NUM_LAYERS_ATTENTION > 0:
-    if args.DROPOUT_TYPE == 'word':
-        l_att = word_dropout.WordDropoutLayer(incoming=l_att, word_input=l_inp, space=data.charset_map[' '],
-                                              p=args.DROPOUT_FRACTION)
-    else:
-        l_att = lasagne.layers.DropoutLayer(incoming=l_att, p=args.DROPOUT_FRACTION)
-    l_att = attention.AttentionLayer(incoming=l_att, num_units=args.NUM_UNITS, mask_input=l_mask,
-                                     W=INI, v=INI, b=INI, num_att_layers=args.NUM_LAYERS_ATTENTION)
+    # Softmax output
+    l_out.append(lasagne.layers.DenseLayer(incoming=l_dense, num_units=data.n_labels,
+                                           nonlinearity=lasagne.nonlinearities.softmax))
 
-# Dense layer
-l_dense = l_att
-for _ in range(args.NUM_LAYERS_DENSE):
-    l_dense = lasagne.layers.DenseLayer(incoming=l_dense, num_units=args.NUM_UNITS)
+    if args.SHOW_MODEL:
+        logger.info('-' * 80)
+        logger.info('Model - layers and their output shapes:')
+        for layer in lasagne.layers.get_all_layers(l_out[-1]):
+            logger.info(str(layer.output_shape) + ' ' + layer.__class__.__name__)
+        logger.info('-' * 80)
 
-# Softmax output
-l_out = lasagne.layers.DenseLayer(incoming=l_dense, num_units=data.n_labels,
-                                  nonlinearity=lasagne.nonlinearities.softmax)
-
-if args.SHOW_MODEL:
-    logger.info('-' * 80)
-    logger.info('Model - layers and their output shapes:')
-    for layer in lasagne.layers.get_all_layers(l_out):
-        logger.info(str(layer.output_shape) + ' ' + layer.__class__.__name__)
-    logger.info('-' * 80)
+# Overwrite the params, so both models use the same variables
+for l_t, l_e in zip(lasagne.layers.get_all_layers(l_out[0]), lasagne.layers.get_all_layers(l_out[1])):
+    for p_t, p_e in zip(l_e.params, l_t.params):
+        setattr(l_e, p_e.name, getattr(l_t, p_t.name))
+    l_e.params = l_t.params
 
 # Define loss function
 def cross_ent(net_output, target, mask):
@@ -300,14 +309,14 @@ def cross_ent(net_output, target, mask):
 
 
 # Define Theano variables for training and evaluation
-train_out = lasagne.layers.get_output(l_out, deterministic=False)
+train_out = lasagne.layers.get_output(l_out[0], deterministic=False)
 cost_train = cross_ent(train_out, sym_y, sym_x_mask)
 
-eval_out = lasagne.layers.get_output(l_out, deterministic=True)
+eval_out = lasagne.layers.get_output(l_out[1], deterministic=True)
 cost_eval = cross_ent(eval_out, sym_y, sym_x_mask)
 
 # Get all parameters of the network
-all_params = lasagne.layers.get_all_params(l_out, trainable=True)
+all_params = lasagne.layers.get_all_params(l_out[0], trainable=True)
 
 # Log the parameters
 logger.info('-' * 80)
