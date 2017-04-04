@@ -118,7 +118,7 @@ class EvaluationHelper:
             acc += np.sum(np.equal(predicted_labels, y_batch) * mask_tweet)
 
             # create confusion matrix for current batch
-            mask_cm = (1 - mask_tweet) * self.data.n_labels * self.data.n_labels
+            mask_cm = (np.ones_like(mask_tweet) - mask_tweet) * self.data.n_labels * self.data.n_labels
             labels, label_counts = np.unique(y_batch * self.data.n_labels + predicted_labels + mask_cm,
                                              return_counts=True)
             for i, c in enumerate(labels):
