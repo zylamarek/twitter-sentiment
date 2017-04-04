@@ -39,8 +39,8 @@ class AttentionLayer(MergeLayer):
         num_inputs = int(np.prod(input_shape[2:]))
 
         self.W = [self.add_param(W, (num_inputs, num_units), name='W') for _ in range(self.num_att_layers)]
-        self.b = [self.add_param(b, (num_units,), name='b', regularizable=False) for _ in range(self.num_att_layers)]
         self.v = self.add_param(v, (num_units, 1), name='v')
+        self.b = [self.add_param(b, (num_units,), name='b', regularizable=False) for _ in range(self.num_att_layers)]
 
     def get_output_shape_for(self, input_shapes):
         input_shape = input_shapes[0]
