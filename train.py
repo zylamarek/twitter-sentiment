@@ -142,8 +142,16 @@ logger.addHandler(fh)
 
 # Log parameters
 logger.info('Settings')
-col_wid = max([len(name) for name, _ in args._get_kwargs()]) + 1
+col_wid = max([len(name) for name, _ in args._get_kwargs()] + [24]) + 1
 logger.info('Theano optimizer\t: '.expandtabs(col_wid) + str(theano.config.optimizer))
+logger.info('Theano version\t: '.expandtabs(col_wid) + theano.__version__)
+logger.info('Lasagne version\t: '.expandtabs(col_wid) + lasagne.__version__)
+cudnn = str(theano.sandbox.cuda.dnn_version()[1]) if theano.sandbox.cuda.dnn_available() else 'disabled'
+logger.info('cuDNN\t: '.expandtabs(col_wid) + cudnn)
+cnmem = str(theano.config.lib.cnmem) if theano.config.lib.cnmem else 'disabled'
+logger.info('CNMeM\t: '.expandtabs(col_wid) + cnmem)
+logger.info('dnn.conv.algo_bwd_filter\t: '.expandtabs(col_wid) + str(theano.config.dnn.conv.algo_bwd_filter))
+logger.info('dnn.conv.algo_bwd_data\t: '.expandtabs(col_wid) + str(theano.config.dnn.conv.algo_bwd_data))
 logger.info('folder_name\t: '.expandtabs(col_wid) + str(folder_name))
 for name, value in args._get_kwargs():
     logger.info((name + '\t: ' + str(value)).expandtabs(col_wid))
