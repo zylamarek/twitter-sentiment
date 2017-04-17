@@ -385,4 +385,71 @@ Introducing extra stacked feedforward layers in the attention mechanism (A2 and 
 
 </table>
 
+I picked the 3LSTM+DT1+A1+D1 as the model with the highest potential from the first set of experiments. Next, I decided to
+play with the convolutions a bit.
+I gave a new C30 size a try and introduced 2 stacked convolution layers in two variants:
+* stride=1 in both layers (2C10, 2C20 and 2C30)
+* stride=1 in the 1st and stride=2 in the 2nd layer (2C10s2 and 2C20s2).
+I also experimented with a maxpool layer with stride=2 between the convolutions and LSTMs (1C10+MP1 and 1C20+MP1).
+
+None of the augmentations improved the performance.
+However, it is worth noticing that maxpool didn't ruin the outcome
+(the results are just slightly lower than without maxpool), even though it halves the LSTM time-length.
+The MP1 augmentation actually brings higher performance in case of 1C20 1M 5e-4 and 1C10 2M 1e-3.
+
+In contrast, the 2C10s2 and 2C20s2 delivered worse results than maxpool or 2 stacked convolutions with stride=1.
+The results are presented in the table below.
+
+2C30 and 3C30 architectures hold more than 1M parameters in the convolution layers, so 1M models were not possible to run.
+
+<table>
+
+<tr>
+<td>3LSTM+DT1+A1+D1</td>
+<td colspan=2 align=center>1M</td>
+<td colspan=2 align=center>2M</td>
+</tr>
+
+<tr align=center>
+<td></td>
+<td>5e-4</td>
+<td>1e-3</td>
+<td>5e-4</td>
+<td>1e-3</td>
+</tr>
+
+<tr align=center>
+<td align=right>1C10<br>1C20<br>1C30</td>
+<td>0.569/0.545/29<br>0.566/0.529/35<br>0.566/0.535/30</td>
+<td>0.574/0.548/34<br>0.566/0.542/19<br>0.569/0.551/24</td>
+<td>0.574/0.547/28<br>0.581/0.557/28<br>0.574/0.551/24</td>
+<td>0.564/0.541/13<br>0.582/0.555/17<br>0.578/0.559/17</td>
+</tr>
+
+<tr align=center>
+<td align=right>2C10<br>2C20<br>2C30</td>
+<td>0.551/0.525/26<br>0.571/0.541/20<br>x</td>
+<td>0.556/0.527/21<br>0.571/0.548/12<br>x</td>
+<td>0.564/0.543/26<br>0.576/0.549/23<br>0.576/0.547/21</td>
+<td>0.564/0.537/17<br>0.577/0.549/13<br>0.574/0.551/14</td>
+</tr>
+
+<tr align=center>
+<td align=right>2C10s2<br>2C20s2</td>
+<td>0.539/0.514/16<br>0.547/0.518/30</td>
+<td>0.533/0.505/16<br>0.553/0.531/14</td>
+<td>0.543/0.526/22<br>0.555/0.537/18</td>
+<td>0.552/0.522/18<br>0.558/0.539/11</td>
+</tr>
+
+<tr align=center>
+<td align=right>1C10+MP1<br>1C20+MP1</td>
+<td>0.561/0.544/28<br>0.567/0.530/28</td>
+<td>0.550/0.532/14<br>0.558/0.539/11</td>
+<td>0.562/0.546/28<br>0.575/0.558/17</td>
+<td>0.568/0.555/17<br>0.568/0.555/23</td>
+</tr>
+
+</table>
+
 TO BE CONTINUED...
