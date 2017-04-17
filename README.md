@@ -452,4 +452,17 @@ The results are presented in the table below.
 
 </table>
 
+### A little bit off-topic v2
+
+In the meantime I tried to speedup the evaluation of the networks (the big_eval_batch branch).
+I compiled a generic model, that can work with any batch size and then
+I increased the batch size in the forward pass, since it is less memory demanding than backpropagation.
+The generic approach turned out to be more time consuming while training and the benefit of big batch
+evaluation was canceled out.
+However, introducing two parallel models with shared parameters allowed to decrease the overall computation time.
+
+Utilizing 9 times bigger batches for evaluation purposes gave only a couple percent boost with same memory footprint
+in 2M case. It shows that the major limiting factor is the data transfer to and from the GPU.
+Since the benefit was mediocre and the complexity of the script greatly increased, I dropped the idea.
+
 TO BE CONTINUED...
