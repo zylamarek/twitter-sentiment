@@ -457,4 +457,8 @@ for epoch in range(args.NUM_EPOCHS):
         logger.info('Validation set recall did not increase in last %d epochs. Stopping.' % args.EARLY_STOPPING)
         break
 
+    # Max epoch reached message
+    if epoch == args.NUM_EPOCHS - 1:
+        logger.info('Max number of training epochs (%d) reached. Stopping.' % args.NUM_EPOCHS)
+
 logger.info('done.')
