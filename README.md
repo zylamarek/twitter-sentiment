@@ -119,7 +119,7 @@ The main training script. It loads the data, builds the specified model and trai
 are explained in the top comment of the script.
 
 Structure of the full model (DRP - dropout, DT - deep transition, DI - deep input, DO - deep output):<br>
-INPUT - DRP - CONVOLUTION - N\*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DENSE - SOFTMAX
+INPUT - DRP - CONVOLUTION - MAXPOOL - N\*(- DRP - DI - LSTM(+/-DT) - DO) - ATTENTION - DENSE - SOFTMAX
 
 ## The story
 
@@ -131,7 +131,9 @@ here please consult the legend below.
 <table>
 <tr><td colspan=2>LEGEND</td></tr>
 <tr><td>nLSTM</td><td>n stacked layers LSTM</td></tr>
-<tr><td>mCnn</td><td>m stacked convolution layers with nn filters of each size in each layer</td></tr>
+<tr><td>mCnn</td><td>m stacked convolution layers with nn filters of each size in each layer, stride=1</td></tr>
+<tr><td>mCnns2</td><td>m stacked convolution layers with nn filters of each size in each layer, stride=1<br>in the 1st layer and stride=2 in the rest</td></tr>
+<tr><td>MPn</td><td>n stacked maxpool layers with stride=2</td></tr>
 <tr><td>An</td><td>attention mechanism with n stacked feedforward layers</td></tr>
 <tr><td>Dn</td><td>n layers dense network after the attention layer</td></tr>
 <tr><td>BLK</td><td>block layer</td></tr>
@@ -390,6 +392,7 @@ play with the convolutions a bit.
 I gave a new C30 size a try and introduced 2 stacked convolution layers in two variants:
 * stride=1 in both layers (2C10, 2C20 and 2C30)
 * stride=1 in the 1st and stride=2 in the 2nd layer (2C10s2 and 2C20s2).
+
 I also experimented with a maxpool layer with stride=2 between the convolutions and LSTMs (1C10+MP1 and 1C20+MP1).
 
 None of the augmentations improved the performance.
