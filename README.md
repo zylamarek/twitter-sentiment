@@ -455,6 +455,43 @@ The results are presented in the table below.
 
 </table>
 
+The slightly superior performance of the 2M models over 1M networks can be seen in the tables above, especially in case of
+more complex architectures.
+It seems worthwhile to investigate how the performance is affected by increasing the number of parameters even further.
+I trained a 3LSTM+DT1+A1+D1 3M model, but it gave worse results than the 2M.
+Perhaps, more training data would mitigate this problem. The results are presented in the table below.
+
+<table>
+
+<tr>
+<td></td>
+<td colspan=2 align=center>1M</td>
+<td colspan=2 align=center>2M</td>
+<td colspan=2 align=center>3M</td>
+</tr>
+
+<tr align=center>
+<td></td>
+<td>5e-4</td>
+<td>1e-3</td>
+<td>5e-4</td>
+<td>1e-3</td>
+<td>5e-4</td>
+<td>1e-3</td>
+</tr>
+
+<tr align=center>
+<td align=right>1C10<br>1C20</td>
+<td>0.569/0.545/29<br>0.566/0.529/35</td>
+<td>0.574/0.548/34<br>0.566/0.542/19</td>
+<td>0.574/0.547/28<br>0.581/0.557/28</td>
+<td>0.564/0.541/13<br>0.582/0.555/17</td>
+<td>0.564/0.540/20<br>0.570/0.560/21</td>
+<td>0.571/0.551/30<br>0.580/0.563/20</td>
+</tr>
+
+</table>
+
 ### A little bit off-topic v2
 
 In the meantime I tried to speedup the evaluation of the networks (the big_eval_batch branch).
