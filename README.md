@@ -505,4 +505,46 @@ Utilizing 9 times bigger batches for evaluation purposes gave only a couple perc
 in 2M case. It shows that the major limiting factor is the data transfer to and from the GPU.
 Since the benefit was mediocre and the complexity of the script greatly increased, I dropped the idea.
 
+### Back to the story - dropout analysis
+
+I decided to finetune the dropout value in 3LSTM+DT1+A1+D1 training. The values I investigated are:
+0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30, 32.5, 35, 40, 45, 50 [%].
+
+First, I experimented with the typical dropout, which I call `char`, since it applies zeroes randomly to all connections.
+I repeated each experiment 5 times, with a different RNG seed. I used the same set of 5 seeds for each dropout value.
+
+The figure below presents the box plot of the `char` dropout experiment results.
+Dropout value on x, validation dataset recall on y axis.
+We can see that the best value (0.585) is obtained with dropout value of 22.5%. Moving in any direction from this
+value decreases the performance.
+
+![finetune_char](graphics/finetune_char.png)
+
+I also wanted to learn how the seed influences the final results. I took all the results from the previous experiment and
+scaled them with regard to the mean value for each dropout value. I grouped the results for each seed separately and
+did a simple ANOVA. The figure below presents the variance of scaled results for each seed separately. We can see that indeed
+there is a fair correlation between the initial state of the network and the final performance.
+MATLAB's anova1 function delivers a very small p-value (7e-5), which also indicates that the differences between the seeds
+are significant.
+
+![finetune_char_seed_variance](graphics/finetune_char_seed_variance.png)
+
+Then I evaluated performance of the `word` dropout. I designed this special version of dropout that also applies
+zeroes randomly,
+but it does so in relation to the original input, for each word separately.
+For example, if the input was 'Yeah, for your recovery.' the dropout values could look like:
+
+<table><tr><td>Y</td><td>e</td><td>a</td><td>h</td><td>,</td><td> </td><td>f</td><td>o</td><td>r</td><td> </td><td>y</td><td>o</td><td>u</td><td>r</td><td> </td><td>r</td><td>e</td><td>c</td><td>o</td><td>v</td><td>e</td><td>r</td><td>y</td><td>.</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr></table>
+
+There is a 1 for each space and a set of 1s or 0s, sampled once for each word, including all special characters.
+I implemented this version having in mind that maybe it will make it easier for the network to grasp the abstract of a word.
+Again, I repeated each experiment 5 times with the same set of seeds as before.
+
+The next figure depicts the box plot of the `word` dropout results. The best value (0.567) is achieved with dropout 2.5%.
+The `word` dropout doesn't increase the performance compared to `char` type. But it is beneficial compared to using
+no dropout at all.
+
+![finetune_word](graphics/finetune_word.png)
+
 TO BE CONTINUED...
