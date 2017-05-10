@@ -379,6 +379,9 @@ if args.PARAMS_TO_LOAD is not None:
     else:
         logger.info('Number of variables incompatible, nothing loaded.')
 
+    # Remove unnecessary variable
+    del l_params
+
     logger.info('Evaluating loaded network... (compare the results to make sure the network was loaded properly)')
     evaluation.evaluate()
     for i_data, cm in zip(evaluation.eval_ids, evaluation.CM[-1]):
