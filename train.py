@@ -48,8 +48,8 @@ parser.add_argument('-DECAY', type=float, default=0.99,
 parser.add_argument('-CONV_STRIDE_2', action='store_const', const=True, default=False,
                     help='uses stride=2 in each convolution layer, except the first')
 parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2, help='probability of setting a connection to zero')
-parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', '1st_word_only', 'char_after_conv'], default='char',
-                    help='which dropout to use; 1st_word_only uses word dropout right after input layer and char in \
+parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', 'conv_word_only', 'char_after_conv'], default='char',
+                    help='which dropout to use; conv_word_only uses word dropout right after input layer and char in \
                     the rest')
 parser.add_argument('-EARLY_STOPPING', type=int, default=10,
                     help='number of epochs without recall increase after which the training stops')
@@ -218,7 +218,7 @@ l_mask = lasagne.layers.InputLayer(shape=(args.BATCH_SIZE, data.max_len), input_
 l_conv = l_inp
 for i_layer in range(args.NUM_LAYERS_CONV):
     # Dropout
-    if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == '1st_word_only':
+    if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == 'conv_word_only':
         l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
                                                p=args.DROPOUT_FRACTION)
     elif args.DROPOUT_TYPE == 'char':
