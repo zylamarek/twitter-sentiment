@@ -547,4 +547,38 @@ no dropout at all.
 
 ![finetune_word](graphics/finetune_word.png)
 
+The convolution layer at the bottom of the network is kind of special. In a way that it serves as a filter between
+the input and LSTMs. Therefore, I examined yet another dropout solution - `conv_word_only`, which stands for `word`
+dropout
+between the input and convolution layer and `char` dropout between any other layers. The motivation, again, was to make it
+easier for the network to understand the word formation, but this time only at the level of filters.
+
+The figure below presents the box plot of the `conv_word_only` dropout results. The best value (0.588) is achieved with
+dropout fraction 35%. This is the new highest validation recall value. Apparently, `conv_word_only` helped the model
+reach a slightly better result.
+
+![finetune_conv_word_only](graphics/finetune_conv_word_only.png)
+
+On the other hand, it might be the case that only removing the dropout from the convolution layer was the reason for
+higher score compared to full `char` dropout. To investigate it, I ran the whole set of `char` dropout experiments
+again, but with dropout totally removed from from the convolution layer. Let's call it `char_after_conv`.
+
+The results are presented in the next figure. The best value (0.575) is achieved with dropout fraction 20%. We can see that
+simply removing the dropout from the convolution layer doesn't help the model. Hence, the `conv_word_only`
+does improve the performance.
+
+![finetune_char_after_conv](graphics/finetune_char_after_conv.png)
+
+To conclude the 4 previous dropout experiments, I plotted the maximum values obtained for each dropout type and fraction.
+It is presented in the figure below. The `word` dropout quickly disappears behind the x scale. `char_after_conv` never
+(except one case) scores the highest value. For dropout fractions between 0 and 22.5% `char` dropout reaches the top value
+most of the times. In case of dropout fractions >=25% `conv_word_only` always performs the best (at 45% it's approximately
+ex aequo with `char_after_conv`).
+
+This results imply that it might be worth to investigate separate values of dropout fraction in `conv_word_only` case.
+More precisely, a higher value for `word` dropout in the convolution layer and a smaller one for `char` dropout in
+all the other layers (e.g. 35% and 22.5%).
+
+![finetune_max_validation_recall](graphics/finetune_max_validation_recall.png)
+
 TO BE CONTINUED...
