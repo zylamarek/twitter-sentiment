@@ -6,6 +6,7 @@ This is my Machine Learning project that I'm currently working on,
 Twitter sentiment analysis (3-point scale) using character-input LSTM network with attention mechanism.
 Implemented in Python 2.7 with Lasagne (0.2.dev1) and Theano (0.8.2.dev-RELEASE).
 In my implementations of layers I reuse some Lasagne's code.
+The main goal of this project is to experiment with different architectures and techniques.
 
 Data from SemEval-2017 Task 4A:<br>
 http://alt.qcri.org/semeval2017/task4/index.php?id=data-and-tools<br>
