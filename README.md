@@ -47,8 +47,9 @@ in the Stanford dataset to filter out those that contain characters not included
 Some of the SemEval tweets in training and validation datasets intersect. Also some tweets are repeated. The script
 handles both issues.
 
-Running the script results in 4 datasets: pretrain (filtered Stanford), validation (SemEval dev2017),
-test (SemEval test2017), train (all SemEval data left). The choice of validation and test data allows result comparison
+Running the script results in 4 datasets: pretrain (filtered Stanford - 1.6M), validation (SemEval dev2017 - 21K),
+test (SemEval test2017 - 12K), train (all SemEval data left - 23K). The choice of validation and test data allows
+result comparison
 (http://alt.qcri.org/semeval2017/task4/index.php?id=results). The data is stored in 1-hot encoding.
 
 ### A little bit off-topic
