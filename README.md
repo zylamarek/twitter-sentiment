@@ -505,7 +505,7 @@ Perhaps, more training data would mitigate this problem. The results are present
 ### A little bit off-topic v2
 
 In the meantime I tried to speedup the evaluation of the networks (the big_eval_batch branch).
-I compiled a generic model, that can work with any batch size and then
+I compiled a generic model (`None` as the first input dimension), that can work with any batch size and then
 I increased the batch size in the forward pass, since it is less memory demanding than backpropagation.
 The generic approach turned out to be more time consuming while training and the benefit of big batch
 evaluation was canceled out.
