@@ -17,10 +17,9 @@ The problem: given a tweet predict its overall sentiment - negative, neutral or 
 
 Note: So far I only use data from the first source (SemEval competition).
 But I'm planning to experiment with the Sentiment140 dataset in the not too distant future.
-I would like to see if it will help to achieve a better performance on the competition data,
+I would like to see if it will help to achieve better performance on the competition data,
 especially given its properties:
-* biased - it is a different dataset, collected by another body;
-* noisy - it was collected automatically, based on emoticons;
+* biased & noisy - it is a different dataset, prepared by another body and collected automatically, based on emoticons;
 * labeled with only two classes (positive and negative);
 * 2 orders of magnitude bigger (1.6M and 23K).
 
