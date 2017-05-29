@@ -115,13 +115,13 @@ WordDropoutLayer class implements a special version of dropout I thought the mod
 Regular dropout layer would set each input to zero with some probability p. This layer sets groups of inputs (each group
 corresponding to a word in the original input) to zero, each with some probability p.
 
-### block/block.py and block/train_block.py
+### block->block.py and block->train.py
 
 BlockLayer class implements a layer with 2 inputs: usual input and control input. Based on the control input the
 usual input is set to zero or passed. There's also a training script that utilizes the layer in a model.
 
-It was supposed to bring sparsity to the network and improve performance, but it doesn't. I put it in a separate
-directory not to clutter the main folder.
+It was supposed to bring sparsity to the network and improve performance, but it doesn't. You can find the code
+in the `block` branch.
 
 ### train.py
 
