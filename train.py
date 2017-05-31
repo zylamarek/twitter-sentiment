@@ -49,7 +49,10 @@ parser.add_argument('-DECAY_LR', type=float, default=1.0,
                     help='LEARNING_RATE is multiplied by DECAY in each epoch after NO_DECAY_EPOCHS')
 parser.add_argument('-CONV_STRIDE_2', action='store_const', const=True, default=False,
                     help='uses stride=2 in each convolution layer, except the first')
-parser.add_argument('-DROPOUT_FRACTION', type=float, default=0.2, help='probability of setting a connection to zero')
+parser.add_argument('-DROPOUT_FRACTION_CHAR', type=float, default=0.2, help='probability of setting a connection to \
+                    zero in char dropout')
+parser.add_argument('-DROPOUT_FRACTION_WORD', type=float, default=0.2, help='probability of setting a connection to \
+                    zero in word dropout')
 parser.add_argument('-DROPOUT_TYPE', choices=['char', 'word', 'conv_word_only', 'char_after_conv'], default='char',
                     help='which dropout to use; conv_word_only uses word dropout right after input layer and char in \
                     the rest')
@@ -120,7 +123,8 @@ folder_name += '_DT%d' % args.NUM_LAYERS_DT
 folder_name += '_DO%d' % args.NUM_LAYERS_DO
 folder_name += '_A%d' % args.NUM_LAYERS_ATTENTION
 folder_name += '_D%d' % args.NUM_LAYERS_DENSE
-folder_name += '_%.2f' % args.DROPOUT_FRACTION
+folder_name += '_%.3f' % args.DROPOUT_FRACTION_CHAR
+folder_name += '_%.3f' % args.DROPOUT_FRACTION_WORD
 folder_name += '_%.6f' % args.LEARNING_RATE
 folder_name = os.path.join('output', folder_name)
 if not os.path.exists(folder_name):
@@ -210,7 +214,8 @@ sym_x_mask = T.matrix(dtype=theano.config.floatX)
 sym_y = T.ivector()
 
 # Dropout shared value
-sh_do = theano.shared(lasagne.utils.floatX(args.DROPOUT_FRACTION))
+sh_do_char = theano.shared(lasagne.utils.floatX(args.DROPOUT_FRACTION_CHAR))
+sh_do_word = theano.shared(lasagne.utils.floatX(args.DROPOUT_FRACTION_WORD))
 
 # Build the model
 t0 = time.time()
@@ -224,9 +229,10 @@ l_conv = l_inp
 for i_layer in range(args.NUM_LAYERS_CONV):
     # Dropout
     if args.DROPOUT_TYPE == 'word' or args.DROPOUT_TYPE == 'conv_word_only':
-        l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '], p=sh_do)
+        l_conv = word_dropout.WordDropoutLayer(incoming=l_conv, word_input=l_inp, space=data.charset_map[' '],
+                                               p=sh_do_word)
     elif args.DROPOUT_TYPE == 'char':
-        l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=sh_do)
+        l_conv = lasagne.layers.DropoutLayer(incoming=l_conv, p=sh_do_char)
 
     if i_layer > 0 and args.CONV_STRIDE_2:
         conv_stride = 2
@@ -266,9 +272,10 @@ for i_layer in range(args.NUM_LAYERS_LSTM):
 
     # Dropout
     if args.DROPOUT_TYPE == 'word':
-        l_lstm = word_dropout.WordDropoutLayer(incoming=l_lstm, word_input=l_inp, space=data.charset_map[' '], p=sh_do)
+        l_lstm = word_dropout.WordDropoutLayer(incoming=l_lstm, word_input=l_inp, space=data.charset_map[' '],
+                                               p=sh_do_word)
     else:
-        l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=sh_do)
+        l_lstm = lasagne.layers.DropoutLayer(incoming=l_lstm, p=sh_do_char)
 
     # Deep input
     for _ in range(args.NUM_LAYERS_DI):
@@ -294,9 +301,10 @@ for i_layer in range(args.NUM_LAYERS_LSTM):
 l_att = l_lstm
 if args.NUM_LAYERS_ATTENTION > 0:
     if args.DROPOUT_TYPE == 'word':
-        l_att = word_dropout.WordDropoutLayer(incoming=l_att, word_input=l_inp, space=data.charset_map[' '], p=sh_do)
+        l_att = word_dropout.WordDropoutLayer(incoming=l_att, word_input=l_inp, space=data.charset_map[' '],
+                                              p=sh_do_word)
     else:
-        l_att = lasagne.layers.DropoutLayer(incoming=l_att, p=sh_do)
+        l_att = lasagne.layers.DropoutLayer(incoming=l_att, p=sh_do_char)
     l_att = attention.AttentionLayer(incoming=l_att, num_units=args.NUM_UNITS, mask_input=l_mask,
                                      W=INI, v=INI, b=INI, num_att_layers=args.NUM_LAYERS_ATTENTION)
 
@@ -423,8 +431,10 @@ for epoch in range(args.NUM_EPOCHS):
     if epoch > (args.NO_DECAY_EPOCHS - 1):
         current_lr = sh_lr.get_value()
         sh_lr.set_value(lasagne.utils.floatX(current_lr * float(args.DECAY_LR)))
-        current_do = sh_do.get_value()
-        sh_do.set_value(lasagne.utils.floatX(current_do * float(args.DECAY_DO)))
+        current_do = sh_do_char.get_value()
+        sh_do_char.set_value(lasagne.utils.floatX(current_do * float(args.DECAY_DO)))
+        current_do = sh_do_word.get_value()
+        sh_do_word.set_value(lasagne.utils.floatX(current_do * float(args.DECAY_DO)))
 
     elapsed_train = time.time() - batch_time
 
